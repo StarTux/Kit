@@ -1,0 +1,15 @@
+kits:
+  starter:
+    CooldownInSeconds: 3600
+    Message: '&3Enjoy your starter kit!'
+    items:
+    - ID: 'minecraft:stone_pickaxe'
+    - ID: 'minecraft:stone_shovel'
+    - ID: 'minecraft:stone_sword'
+    - ID: 'minecraft:stone_axe'
+    - ID: 'minecraft:bread'
+      Amount: 20
+    - ID: 'minecraft:planks'
+      Amount: 40
+    - ID: 'minecraft:torch'
+      Amount: 20

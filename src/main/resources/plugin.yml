@@ -1,0 +1,22 @@
+name: Kit
+description: Give people kits
+author: StarTux
+version: 0.1
+main: com.winthier.kit.bukkit.BukkitKitPlugin
+depend: []
+commands:
+  kit:
+    description: Select a kit
+    permission: kit.kit
+    usage: /<command>
+  kitreload:
+    description: Reload kit configurations
+    permission: kit.admin
+    usage: /<command>
+permissions:
+  kit.kit:
+    default: op
+    description: Use the /kit command
+  kit.admin:
+    default: op
+    description: Use admin commands
