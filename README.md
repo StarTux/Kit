@@ -1,0 +1,2 @@
+# Kit
+Kits for Bukkit
