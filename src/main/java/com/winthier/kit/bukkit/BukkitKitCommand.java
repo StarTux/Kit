@@ -57,10 +57,10 @@ public class BukkitKitCommand implements CommandExecutor
             Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), cmd);
         } else if (args.length == 1) {
             UUID uuid = player.getUniqueId();
-            String questName = args[0];
-            BukkitKit kit = plugin.getKitNamed(questName);
+            String kitName = args[0];
+            BukkitKit kit = plugin.getKitNamed(kitName);
             if (kit == null || !kit.playerHasPermission(uuid)) {
-                player.sendMessage(ChatColor.RED + "Quest not found: " + questName);
+                player.sendMessage(ChatColor.RED + "Kit not found: " + kitName);
                 return true;
             }
             plugin.getLogger().info("Giving kit " + kit.getName() + " to " + player.getName());
