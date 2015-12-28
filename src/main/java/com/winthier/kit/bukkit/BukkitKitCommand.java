@@ -52,7 +52,6 @@ public class BukkitKitCommand implements CommandExecutor
                 }
             }
             String json = JSONValue.toJSONString(message);
-            System.out.println("json=" + json);
             String cmd = "minecraft:tellraw " + player.getName() + " " + json;
             Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), cmd);
         } else if (args.length == 1) {
