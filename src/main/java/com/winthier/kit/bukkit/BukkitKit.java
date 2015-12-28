@@ -15,14 +15,11 @@ import org.bukkit.entity.Player;
 public class BukkitKit extends Kit
 {
     final BukkitKitPlugin plugin;
-    @Getter
-    String name;
-    @Getter
-    String message;
-    @Getter
-    List<BukkitKitItem> items = new ArrayList<>();;
-    @Getter
-    int cooldownInSeconds;
+    @Getter String name;
+    @Getter String message;
+    @Getter String permission;
+    @Getter List<BukkitKitItem> items = new ArrayList<>();;
+    @Getter int cooldownInSeconds;
 
     BukkitKit(BukkitKitPlugin plugin, String name) {
         this.name = name;
@@ -40,10 +37,11 @@ public class BukkitKit extends Kit
     @Override
     protected boolean playerHasPermission(UUID uuid)
     {
+        if (permission == null || permission.isEmpty()) return true;
         Player player = Bukkit.getServer().getPlayer(uuid);
         if (player == null) return false;
         if (player.isOp()) return true;
-        return player.hasPermission("kit." + getName().toLowerCase());
+        return player.hasPermission(permission);
     }
 
     @Override
@@ -73,6 +71,11 @@ public class BukkitKit extends Kit
     {
         cooldownInSeconds = config.getInt("CooldownInSeconds");
         message = config.getString("Message");
+        if (config.isSet("Permission")) {
+            permission = config.getString("Permission");
+        } else {
+            permission = "kit." + getName().toLowerCase();
+        }
         MemoryConfiguration tmpSection = new MemoryConfiguration();
         for (Map<?, ?> map : config.getMapList("items")) {
             ConfigurationSection section = tmpSection.createSection("tmp", map);
