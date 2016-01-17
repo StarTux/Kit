@@ -24,6 +24,16 @@ public class BukkitKitCommand implements CommandExecutor
     
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args)
     {
+        // Reload
+        if (args.length == 1 && args[0].equalsIgnoreCase("-reload")) {
+            if (!sender.hasPermission("kit.admin")) {
+                sender.sendMessage("No permission");
+                return true;
+            }
+            plugin.reload();
+            sender.sendMessage("Kit configs reloaded");
+            return true;
+        }
         Player player = sender instanceof Player ? (Player)sender : null;
         if (player == null) {
             sender.sendMessage("Player expected");
@@ -38,17 +48,17 @@ public class BukkitKitCommand implements CommandExecutor
                 return true;
             }
             List<Object> message = new ArrayList<>();
-            message.add(jsonItem(ChatColor.DARK_AQUA, "Your kits:"));
+            message.add(format("&3&lKits"));
             for (BukkitKit kit : kits) {
                 message.add(" ");
                 if (kit.playerIsOnCooldown(uuid)) {
-                    message.add(jsonItem(ChatColor.DARK_GRAY, kit.getName(),
-                                         ChatColor.DARK_GRAY, "You are on cooldown for the " + kit.getName() + " kit.",
-                                         null));
+                    message.add(button("&r[&8"+kit.getName()+"&r]",
+                                       "&8/kit "+kit.getName().toLowerCase()+"\n&oKit\nYou are on cooldown.",
+                                       "/kit "+kit.getName().toLowerCase()));
                 } else {
-                    message.add(jsonItem(ChatColor.AQUA, "[" + kit.getName() + "]",
-                                         ChatColor.DARK_AQUA, "Click to get the " + kit.getName() + " kit.",
-                                         "/kit " + kit.getName()));
+                    message.add(button("&r[&a"+kit.getName()+"&r]",
+                                       "&a/kit "+kit.getName().toLowerCase()+"\n&oKit\nGet the "+kit.getName()+" kit.",
+                                       "/kit "+kit.getName().toLowerCase()));
                 }
             }
             String json = JSONValue.toJSONString(message);
@@ -70,38 +80,31 @@ public class BukkitKitCommand implements CommandExecutor
         return true;
     }
 
-    private Object jsonItem(ChatColor color, String text, ChatColor tooltipColor, String tooltip, String command)
+    Object button(String chat, String tooltip, String command)
     {
-        Map<String, Object> result = new HashMap<>();
-        result.put("color", jsonColor(color));
-        result.put("text", text);
-        if (tooltip != null) {
-            Map<String, Object> hover = new HashMap<>();
-            result.put("hoverEvent", hover);
-            hover.put("action", "show_text");
-            Map<String, Object> hoverValue = new HashMap<>();
-            hover.put("value", hoverValue);
-            hoverValue.put("color", jsonColor(tooltipColor));
-            hoverValue.put("text", tooltip);
+        Map<String, Object> map = new HashMap<>();
+
+        map.put("text", "");
+        List<Object> extraList = new ArrayList<>();
+        for (String token : format(chat).split(" ")) {
+            if (!extraList.isEmpty()) extraList.add(" ");
+            extraList.add(token);
         }
-        if (command != null) {
-            Map<String, Object> click = new HashMap<>();
-            result.put("clickEvent", click);
-            click.put("action", "run_command");
-            click.put("value", command);
-        }
-        return result;
+        map.put("extra", extraList);
+        Map<String, Object> map2 = new HashMap<>();
+        map.put("clickEvent", map2);
+        map2.put("action", "run_command");
+        map2.put("value", command);
+        map2 = new HashMap<>();
+        map.put("hoverEvent", map2);
+        map2.put("action", "show_text");
+        map2.put("value", format(tooltip));
+        return map;
     }
 
-    private Object jsonItem(ChatColor color, String text)
-    {
-        return jsonItem(color, text, null, null, null);
-    }
-
-    private String jsonColor(ChatColor color)
-    {
-        switch (color) {
-        default: return color.name().toLowerCase();
-        }
+    static String format(String msg, Object... args) {
+        msg = ChatColor.translateAlternateColorCodes('&', msg);
+        if (args.length > 0) msg = String.format(msg, args);
+        return msg;
     }
 }

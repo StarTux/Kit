@@ -17,7 +17,6 @@ public class BukkitKitPlugin extends JavaPlugin
         saveDefaultConfig();
         reloadConfig();
         getCommand("kit").setExecutor(new BukkitKitCommand(this));
-        getCommand("kitreload").setExecutor(new BukkitKitReloadCommand(this));
     }
 
     @Override
@@ -60,7 +59,7 @@ public class BukkitKitPlugin extends JavaPlugin
     BukkitKit getKitNamed(String name)
     {
         for (BukkitKit kit : getAllKits()) {
-            if (kit.getName().equals(name)) return kit;
+            if (kit.getName().equalsIgnoreCase(name)) return kit;
         }
         return null;
     }

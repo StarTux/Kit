@@ -9,10 +9,6 @@ commands:
     description: Select a kit
     permission: kit.kit
     usage: /<command>
-  kitreload:
-    description: Reload kit configurations
-    permission: kit.admin
-    usage: /<command>
 permissions:
   kit.kit:
     default: op
