@@ -1,14 +1,19 @@
+main: com.winthier.kit.KitPlugin
 name: Kit
 description: Give people kits
 author: StarTux
 version: 0.1
-main: com.winthier.kit.bukkit.BukkitKitPlugin
+api-version: 1.13
 depend: []
 commands:
   kit:
     description: Select a kit
     permission: kit.kit
-    usage: /<command>
+    usage: |-
+      /kit - List kits
+      /kit <kit> - Claim kit
+      /kit -reload - Reload (admins)
+      /kit -give <player> <kit> - Give to player (admins)
 permissions:
   kit.kit:
     default: op

@@ -1,28 +1,27 @@
-package com.winthier.kit.bukkit;
+package com.winthier.kit;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-public class BukkitCooldowns
-{
-    final BukkitKitPlugin plugin;
+@RequiredArgsConstructor
+public final class Cooldowns {
+    final KitPlugin plugin;
     private YamlConfiguration config = null;
-    final static String FILENAME = "cooldowns.yml";
+    static final String FILENAME = "cooldowns.yml";
 
-    File saveFile()
-    {
+    File saveFile() {
         return new File(plugin.getDataFolder(), FILENAME);
     }
 
-    BukkitCooldowns(BukkitKitPlugin plugin)
-    {
-        this.plugin = plugin;
+    void load() {
         config = YamlConfiguration.loadConfiguration(saveFile());
         // clean up
-        long currentTime = System.currentTimeMillis();
+        long currentTime = Instant.now().getEpochSecond();
         for (String kitKey : config.getKeys(false)) {
             ConfigurationSection kitSection = config.getConfigurationSection(kitKey);
             for (String userKey : kitSection.getKeys(false)) {
@@ -32,8 +31,7 @@ public class BukkitCooldowns
         }
     }
 
-    void save()
-    {
+    void save() {
         try {
             config.save(saveFile());
         } catch (IOException ioe) {
@@ -41,14 +39,18 @@ public class BukkitCooldowns
         }
     }
 
-    Long getCooldown(UUID uuid, String kit)
-    {
+    long getCooldown(UUID uuid, String kit) {
         return config.getLong(kit + "." + uuid.toString());
     }
 
-    void setCooldownInSeconds(UUID uuid, String kit, int seconds)
-    {
-        long cooldown = System.currentTimeMillis() + (long)seconds * 1000L;
+    void setCooldown(UUID uuid, String kit, int seconds) {
+        if (seconds == 0) return;
+        long cooldown;
+        if (seconds < 0) {
+            cooldown = Long.MAX_VALUE;
+        } else {
+            cooldown = Instant.now().getEpochSecond() + (long) seconds * 1000L;
+        }
         ConfigurationSection kitSection = config.getConfigurationSection(kit);
         if (kitSection == null) kitSection = config.createSection(kit);
         kitSection.set(uuid.toString(), cooldown);
