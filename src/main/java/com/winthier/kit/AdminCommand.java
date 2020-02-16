@@ -68,7 +68,7 @@ public final class AdminCommand implements CommandExecutor {
                     String time = cooldown == Long.MAX_VALUE
                         ? "Forever"
                         : formatTime(dist);
-                    sender.sendMessage(uuid + ", " + name + ": " + time);
+                    sender.sendMessage("- " + name + ": " + time);
                 }
             }
             return true;
