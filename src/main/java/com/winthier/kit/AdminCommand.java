@@ -81,6 +81,6 @@ public final class AdminCommand implements CommandExecutor {
     String formatTime(long seconds) {
         long minutes = seconds / 60;
         long hours = minutes / 60;
-        return String.format("%2f:%2f.%2f", hours, minutes % 60L, seconds % 60L);
+        return String.format("%2d:%2d.%2d", hours, minutes % 60L, seconds % 60L);
     }
 }
