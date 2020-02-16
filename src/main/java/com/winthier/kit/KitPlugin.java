@@ -14,6 +14,7 @@ public final class KitPlugin extends JavaPlugin {
         saveDefaultConfig();
         reload();
         getCommand("kit").setExecutor(new KitCommand(this));
+        getCommand("kitadmin").setExecutor(new AdminCommand(this));
     }
 
     @Override

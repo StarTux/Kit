@@ -4,7 +4,7 @@ description: Give people kits
 author: StarTux
 version: 0.1
 api-version: 1.13
-depend: []
+depend: [GenericEvents]
 commands:
   kit:
     description: Select a kit
@@ -12,8 +12,12 @@ commands:
     usage: |-
       /kit - List kits
       /kit <kit> - Claim kit
-      /kit -reload - Reload (admins)
-      /kit -give <player> <kit> - Give to player (admins)
+  kitadmin:
+    permission: kit.admin
+    description: Admin interface
+    usage: |-
+      /kitadmin reload - Reload
+      /kitadmin give <player> <kit> - Give to player
 permissions:
   kit.kit:
     default: op

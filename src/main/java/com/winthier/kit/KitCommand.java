@@ -17,40 +17,6 @@ public final class KitCommand implements CommandExecutor {
     final KitPlugin plugin;
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        // Reload
-        if (args.length == 1 && args[0].equalsIgnoreCase("-reload")) {
-            if (!sender.hasPermission("kit.admin")) {
-                sender.sendMessage("No permission");
-                return true;
-            }
-            plugin.reload();
-            sender.sendMessage("Kit configs reloaded");
-            return true;
-        }
-        if (args.length == 3 && args[0].equalsIgnoreCase("-give")) {
-            if (!sender.hasPermission("kit.admin")) {
-                sender.sendMessage("No permission");
-                return true;
-            }
-            Player target = plugin.getServer().getPlayerExact(args[1]);
-            if (target == null) {
-                sender.sendMessage("Player not found: " + args[1]);
-                return true;
-            }
-            Kit kit = plugin.getKitNamed(args[2]);
-            if (kit == null) {
-                sender.sendMessage("Kit not found: " + args[2]);
-                return true;
-            }
-            if (kit.playerIsOnCooldown(target)) {
-                return true;
-            }
-            kit.setPlayerOnCooldown(target);
-            plugin.getLogger().info("Giving kit " + kit.name + " to " + target.getName());
-            kit.giveToPlayer(target);
-            sender.sendMessage("Kit " + kit.name + " given to " + target.getName());
-            return true;
-        }
         Player player = sender instanceof Player ? (Player) sender : null;
         if (player == null) {
             sender.sendMessage("Player expected");

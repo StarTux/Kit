@@ -3,6 +3,8 @@ package com.winthier.kit;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.configuration.ConfigurationSection;
@@ -54,5 +56,29 @@ public final class Cooldowns {
         ConfigurationSection kitSection = config.getConfigurationSection(kit);
         if (kitSection == null) kitSection = config.createSection(kit);
         kitSection.set(uuid.toString(), cooldown);
+    }
+
+    List<String> listCooldowns() {
+        return new ArrayList<>(config.getKeys(false));
+    }
+
+    List<UUID> listCooldowns(String kitName) {
+        List<UUID> list = new ArrayList<>();
+        ConfigurationSection kitSection = config
+            .getConfigurationSection(kitName);
+        if (kitSection == null) return list;
+        for (String key : kitSection.getKeys(false)) {
+            UUID uuid;
+            try {
+                uuid = UUID.fromString(key);
+            } catch (IllegalArgumentException iae) {
+                plugin.getLogger().warning("Found invalid UUID: "
+                                           + kitName + "." + key);
+                kitSection.set(key, null);
+                continue;
+            }
+            list.add(uuid);
+        }
+        return list;
     }
 }
