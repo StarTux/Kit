@@ -49,7 +49,7 @@ public final class Cooldowns {
         if (seconds < 0) {
             cooldown = Long.MAX_VALUE;
         } else {
-            cooldown = Instant.now().getEpochSecond() + (long) seconds * 1000L;
+            cooldown = Instant.now().getEpochSecond() + (long) seconds;
         }
         ConfigurationSection kitSection = config.getConfigurationSection(kit);
         if (kitSection == null) kitSection = config.createSection(kit);
