@@ -19,7 +19,8 @@ commands:
       /kitadmin reload - Reload
       /kitadmin give <player> <kit> - Give to player
       /kitadmin cooldowns - List kit cooldowns
-      /kitadmin cooldowns <kit> - List player cooldowns
+      /kitadmin cooldowns <kit> - List kit cooldowns
+      /kitadmin player <name> - List player cooldowns
 permissions:
   kit.kit:
     default: op

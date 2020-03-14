@@ -1,11 +1,10 @@
-package com.winthier.kit; 
-import com.google.gson.Gson;
+package com.winthier.kit;
+
 import com.winthier.generic_events.GenericEvents;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
@@ -13,8 +12,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import java.util.UUID;
-import java.time.Instant;
 
 @RequiredArgsConstructor
 public final class AdminCommand implements CommandExecutor {
@@ -53,12 +50,13 @@ public final class AdminCommand implements CommandExecutor {
         case "cooldowns": {
             if (args.length > 2) return false;
             if (args.length == 1) {
-                sender.sendMessage("Available cooldowns: "
+                sender.sendMessage(ChatColor.YELLOW + "Available cooldowns: "
+                                   + ChatColor.WHITE
                                    + plugin.cooldowns.listCooldowns().stream()
                                    .collect(Collectors.joining(", ")));
             } else if (args.length == 2) {
                 String kitName = args[1];
-                sender.sendMessage("Cooldowns for kit '" + kitName + "':");
+                sender.sendMessage(ChatColor.YELLOW + "Cooldowns for kit '" + kitName + "':");
                 long now = Instant.now().getEpochSecond();
                 for (UUID uuid : plugin.cooldowns.listCooldowns(kitName)) {
                     String name = GenericEvents.cachedPlayerName(uuid);
@@ -68,8 +66,49 @@ public final class AdminCommand implements CommandExecutor {
                     String time = cooldown == Long.MAX_VALUE
                         ? "Forever"
                         : formatTime(dist);
-                    sender.sendMessage("- " + name + ": " + time);
+                    sender.sendMessage(ChatColor.GRAY + "- "
+                                       + ChatColor.YELLOW + name + ": "
+                                       + ChatColor.AQUA + time);
                 }
+            }
+            return true;
+        }
+        case "player": {
+            if (args.length != 2) return false;
+            String name = args[1];
+            UUID uuid = GenericEvents.cachedPlayerUuid(name);
+            if (uuid == null) {
+                sender.sendMessage(ChatColor.RED + "Unknown player: "
+                                   + name);
+                return true;
+            }
+            name = GenericEvents.cachedPlayerName(uuid);
+            long now = Instant.now().getEpochSecond();
+            List<String> ls = new ArrayList<>();
+            for (Kit kit : plugin.kits) {
+                long cd = plugin.cooldowns.getCooldown(uuid, kit.name);
+                if (cd == 0) continue;
+                long dist = cd - now;
+                String time;
+                if (cd == Long.MAX_VALUE) {
+                    time = "Forever";
+                } else if (cd < now) {
+                    time = "Expired";
+                } else {
+                    time = formatTime(dist);
+                }
+                ls.add(ChatColor.GRAY + "- "
+                       + ChatColor.YELLOW + kit.name + ": "
+                       + ChatColor.AQUA + time);
+            }
+            if (ls.isEmpty()) {
+                sender.sendMessage(ChatColor.RED + "No cooldowns.");
+                return true;
+            }
+            sender.sendMessage("" + ChatColor.YELLOW + ls.size()
+                               + (ls.size() == 1 ? " cooldown" : "cooldowns"));
+            for (String s : ls) {
+                sender.sendMessage(s);
             }
             return true;
         }
