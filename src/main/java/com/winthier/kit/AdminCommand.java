@@ -102,11 +102,11 @@ public final class AdminCommand implements CommandExecutor {
                        + ChatColor.AQUA + time);
             }
             if (ls.isEmpty()) {
-                sender.sendMessage(ChatColor.RED + "No cooldowns.");
+                sender.sendMessage(ChatColor.RED + name + " has no cooldowns.");
                 return true;
             }
-            sender.sendMessage("" + ChatColor.YELLOW + ls.size()
-                               + (ls.size() == 1 ? " cooldown" : " cooldowns"));
+            sender.sendMessage(ChatColor.YELLOW + name + " has " + ls.size()
+                               + (ls.size() == 1 ? "cooldown:" : "cooldowns:"));
             for (String s : ls) {
                 sender.sendMessage(s);
             }
