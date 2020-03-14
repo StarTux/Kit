@@ -106,7 +106,7 @@ public final class AdminCommand implements CommandExecutor {
                 return true;
             }
             sender.sendMessage("" + ChatColor.YELLOW + ls.size()
-                               + (ls.size() == 1 ? " cooldown" : "cooldowns"));
+                               + (ls.size() == 1 ? " cooldown" : " cooldowns"));
             for (String s : ls) {
                 sender.sendMessage(s);
             }
