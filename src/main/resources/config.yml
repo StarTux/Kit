@@ -1,17 +1,1 @@
 kits:
-  example:
-    Cooldown: 3600 # Seconds, -1 means indefinitely
-    Messages:
-    - '&3Enjoy your starter kit!'
-    Permission: kit.test
-    Hidden: false
-    Items:
-    - Material: 'stone_pickaxe'
-    - Material: 'stone_shovel'
-    - Material: 'stone_sword'
-    - Material: 'stone_axe'
-    - Material: 'bread'
-      Amount: 20
-      Tag: '{}'
-    Commands:
-    - 'money give {player} 100'

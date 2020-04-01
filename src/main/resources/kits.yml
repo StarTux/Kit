@@ -1,0 +1,26 @@
+example:
+  Description:
+  - Example Kit
+  Cooldown: 3600 # Seconds, -1 means indefinitely
+  Messages:
+  - '&3Enjoy your starter kit!'
+  Permission: kit.test
+  Hidden: false
+  Items:
+  - Material: 'stone_pickaxe'
+    Tag: '{}'
+  - Material: 'stone_shovel'
+  - Material: 'stone_sword'
+    Tag: '{"Enchantments":[{"lvl":5,"id":"minecraft:sharpness"},{"lvl":3,"id":"minecraft:unbreaking"}],"Damage":0}'
+  - Material: 'stone_axe'
+  - Material: 'bread'
+    Amount: 20
+  Commands:
+  - 'money give {player} 100'
+personal:
+  Members:
+    42f537dd-30e5-4388-966c-1b7eb54c545d: StarTux
+  Items:
+  - Material: 'diamond'
+  Description: Personal Kit for StarTux
+  Cooldown: -1 # Unique

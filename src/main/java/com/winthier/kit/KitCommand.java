@@ -1,12 +1,15 @@
 package com.winthier.kit;
 
-import com.google.gson.Gson;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -23,79 +26,94 @@ public final class KitCommand implements CommandExecutor {
             return true;
         }
         if (args.length == 0) {
-            List<Kit> kits = new ArrayList<>();
-            for (Kit kit : plugin.kits) {
-                if (!kit.playerHasPermission(player)) continue;
-                if (kit.hidden) continue;
-                kits.add(kit);
-            }
-            if (kits.isEmpty()) {
-                player.sendMessage(ChatColor.RED + "There are no kits available for you.");
-                return true;
-            }
-            List<Object> message = new ArrayList<>();
-            message.add(format("&3&lKits"));
-            for (Kit kit : kits) {
-                message.add(" ");
-                if (kit.playerIsOnCooldown(player)) {
-                    message.add(button("&r[&8" + kit.name + "&r]",
-                                       "&8/kit " + kit.name.toLowerCase()
-                                       + "\n&oKit\nYou are on cooldown.",
-                                       "/kit " + kit.name.toLowerCase()));
-                } else {
-                    message.add(button("&r[&a" + kit.name + "&r]",
-                                       "&a/kit " + kit.name.toLowerCase()
-                                       + "\n&oKit\nGet the " + kit.name + " kit.",
-                                       "/kit " + kit.name.toLowerCase()));
-                }
-            }
-            String json = new Gson().toJson(message);
-            String cmd = "minecraft:tellraw " + player.getName() + " " + json;
-            plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), cmd);
-        } else if (args.length == 1) {
-            String kitName = args[0];
-            Kit kit = plugin.getKitNamed(kitName);
-            if (kit == null || !kit.playerHasPermission(player) || kit.hidden) {
-                player.sendMessage(ChatColor.RED + "Kit not found: " + kitName);
-                return true;
-            }
-            if (kit.playerIsOnCooldown(player)) {
-                kit.sendCooldownMessage(player);
-                return true;
-            }
-            kit.setPlayerOnCooldown(player);
-            plugin.getLogger().info("Giving kit " + kit.name + " to " + player.getName());
-            kit.giveToPlayer(player);
-        } else {
-            return false;
+            showKitList(player);
+            return true;
         }
+        if (args.length != 1) return false;
+        String kitName = args[0];
+        Kit kit = plugin.getKitNamed(kitName);
+        if (kit == null || !kit.playerCanClaim(player)) {
+            player.sendMessage(ChatColor.RED + "Kit not found: " + kitName);
+            return true;
+        }
+        if (kit.playerIsOnCooldown(player)) {
+            if (kit.hasInfiniteCooldown()) {
+                player.sendMessage(ChatColor.RED + "You already claimed this kit.");
+            } else {
+                long secs = kit.getRemainingCooldown(player);
+                player.sendMessage(ChatColor.RED + "You are on cooldown: "
+                                   + ChatColor.GRAY + formatSeconds(secs));
+            }
+            return true;
+        }
+        kit.setPlayerOnCooldown(player);
+        plugin.getLogger().info("Giving kit " + kit.name + " to " + player.getName());
+        kit.giveToPlayer(player);
         return true;
     }
 
-    Object button(String chat, String tooltip, String command) {
-        Map<String, Object> map = new HashMap<>();
-
-        map.put("text", "");
-        List<Object> extraList = new ArrayList<>();
-        for (String token : format(chat).split(" ")) {
-            if (!extraList.isEmpty()) extraList.add(" ");
-            extraList.add(token);
+    void showKitList(Player player) {
+        List<Kit> kits = plugin.kits.stream()
+            .filter(kit -> kit.playerCanSee(player))
+            .collect(Collectors.toList());
+        if (kits.isEmpty()) {
+            player.sendMessage(ChatColor.RED + "There are no kits available for you.");
+            return;
         }
-        map.put("extra", extraList);
-        Map<String, Object> map2 = new HashMap<>();
-        map.put("clickEvent", map2);
-        map2.put("action", "run_command");
-        map2.put("value", command);
-        map2 = new HashMap<>();
-        map.put("hoverEvent", map2);
-        map2.put("action", "show_text");
-        map2.put("value", format(tooltip));
-        return map;
+        ComponentBuilder cb = new ComponentBuilder();
+        cb.append("Kits:").color(ChatColor.GRAY);
+        for (Kit kit : kits) {
+            cb.append(" ").reset();
+            String cmd = "/kit " + kit.name.toLowerCase();
+            cb.append("[" + kit.name + "]");
+            cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd));
+            if (kit.playerIsOnCooldown(player)) {
+                cb.color(ChatColor.DARK_GRAY);
+                String remain;
+                if (kit.hasInfiniteCooldown()) {
+                    remain = ChatColor.RED + "Already claimed!";
+                } else {
+                    long secs = kit.getRemainingCooldown(player);
+                    remain = ChatColor.DARK_GRAY + "You are on cooldown: "
+                        + ChatColor.GRAY + formatSeconds(secs);
+                }
+                List<BaseComponent> tooltip = new ArrayList<>();
+                tooltip.add(new TextComponent("" + ChatColor.DARK_GRAY + cmd));
+                tooltip.add(new TextComponent("\n" + remain));
+                for (String line : kit.description) {
+                    line = "\n" + ChatColor.stripColor(fmt(line));
+                    tooltip.add(new TextComponent("" + ChatColor.DARK_GRAY + line));
+                }
+                cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                                        tooltip.toArray(new TextComponent[0])));
+            } else {
+                cb.color(ChatColor.GREEN);
+                List<BaseComponent> tooltip = new ArrayList<>();
+                tooltip.add(new TextComponent("" + ChatColor.GREEN + cmd));
+                for (String line : kit.description) {
+                    tooltip.add(new TextComponent("\n" + fmt(line)));
+                }
+                cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                                        tooltip.toArray(new TextComponent[0])));
+            }
+        }
+        player.spigot().sendMessage(cb.create());
     }
 
-    static String format(String msg, Object... args) {
-        msg = ChatColor.translateAlternateColorCodes('&', msg);
-        if (args.length > 0) msg = String.format(msg, args);
-        return msg;
+    String formatSeconds(long seconds) {
+        long minutes = seconds / 60;
+        if (minutes <= 60) {
+            return String.format("%02d:%02d", minutes, seconds % 60);
+        }
+        long hours = minutes / 60;
+        if (hours <= 24) {
+            return String.format("%02dh%02d:%02d", hours, minutes % 60, seconds % 60);
+        }
+        long days = hours / 24;
+        return String.format("%d%02dh%02d:%02d", days, hours % 24, minutes % 60, seconds % 60);
+    }
+
+    static String fmt(String str) {
+        return ChatColor.translateAlternateColorCodes('&', str);
     }
 }

@@ -1,41 +1,46 @@
 package com.winthier.kit;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class KitPlugin extends JavaPlugin {
     final Cooldowns cooldowns = new Cooldowns(this);
     final List<Kit> kits = new ArrayList<>();
+    final EventListener listener = new EventListener(this);
+    final KitCommand command = new KitCommand(this);
 
     @Override
     public void onEnable() {
-        saveDefaultConfig();
-        reload();
-        getCommand("kit").setExecutor(new KitCommand(this));
+        saveResource("kits.yml", false);
+        getCommand("kit").setExecutor(command);
         getCommand("kitadmin").setExecutor(new AdminCommand(this));
-    }
-
-    @Override
-    public void onDisable() {
-        if (cooldowns != null) cooldowns.save();
+        getServer().getPluginManager().registerEvents(listener, this);
+        reload();
     }
 
     void reload() {
-        reloadConfig();
         cooldowns.load();
         loadKits();
     }
 
     void loadKits() {
         kits.clear();
-        ConfigurationSection kitsSection = getConfig().getConfigurationSection("kits");
-        for (String key : kitsSection.getKeys(false)) {
+        File file = new File(getDataFolder(), "kits.yml");
+        YamlConfiguration config = new YamlConfiguration();
+        try {
+            config.load(file);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+        for (String key : config.getKeys(false)) {
             getLogger().info("Loading kit " + key);
-            ConfigurationSection kitSection = kitsSection.getConfigurationSection(key);
+            ConfigurationSection section = config.getConfigurationSection(key);
             Kit kit = new Kit(this, key);
-            kit.load(kitSection);
+            kit.load(section);
             kits.add(kit);
         }
     }
