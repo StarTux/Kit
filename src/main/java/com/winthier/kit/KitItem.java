@@ -13,11 +13,6 @@ public final class KitItem {
     @Getter int amount = 1;
     @Getter String tag = null;
 
-    // public void giveToPlayer(Player player) {
-    //     String command = consoleCommand(player.getName());
-    //     plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
-    // }
-
     void load(ConfigurationSection config) {
         String str = config.getString("Material", "");
         try {
@@ -31,16 +26,9 @@ public final class KitItem {
 
     public ItemStack createItemStack() {
         ItemStack item = new ItemStack(material, amount);
-        if (tag != null) {
+        if (tag != null && !tag.isEmpty()) {
             item = plugin.getServer().getUnsafe().modifyItemStack(item, tag);
         }
         return item;
     }
-
-    // private String consoleCommand(String playerName) {
-    //     return String.format("minecraft:give %s %s%s %d",
-    //                          playerName,
-    //                          material.name().toLowerCase(), tag,
-    //                          amount);
-    // }
 }
