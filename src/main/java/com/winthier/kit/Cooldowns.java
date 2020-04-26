@@ -45,8 +45,8 @@ public final class Cooldowns {
         return config.getLong(kit + "." + uuid.toString());
     }
 
-    void setCooldown(UUID uuid, String kit, int seconds) {
-        if (seconds == 0) return;
+    long setCooldown(UUID uuid, String kit, int seconds) {
+        if (seconds == 0) return 0;
         long cooldown;
         if (seconds < 0) {
             cooldown = Long.MAX_VALUE;
@@ -56,6 +56,16 @@ public final class Cooldowns {
         ConfigurationSection kitSection = config.getConfigurationSection(kit);
         if (kitSection == null) kitSection = config.createSection(kit);
         kitSection.set(uuid.toString(), cooldown);
+        return cooldown;
+    }
+
+    boolean resetCooldown(UUID uuid, String kit) {
+        ConfigurationSection kitSection = config.getConfigurationSection(kit);
+        if (kitSection == null) return false;
+        String u = uuid.toString();
+        if (!kitSection.isSet(u)) return false;
+        kitSection.set(u, null);
+        return true;
     }
 
     List<String> listCooldowns() {

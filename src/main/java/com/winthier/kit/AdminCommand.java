@@ -3,6 +3,7 @@ package com.winthier.kit;
 import com.winthier.generic_events.GenericEvents;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -109,6 +110,46 @@ public final class AdminCommand implements CommandExecutor {
                                + (ls.size() == 1 ? "cooldown:" : "cooldowns:"));
             for (String s : ls) {
                 sender.sendMessage(s);
+            }
+            return true;
+        }
+        case "set": {
+            if (args.length != 3 || args.length != 4) return false;
+            String kitName = args[1];
+            String playerName = args[2];
+            Kit kit = plugin.getKitNamed(kitName);
+            if (kit == null) {
+                sender.sendMessage(ChatColor.RED + "Kit not found: " + kitName);
+                return true;
+            }
+            UUID uuid = GenericEvents.cachedPlayerUuid(playerName);
+            if (uuid == null) {
+                sender.sendMessage(ChatColor.RED + "Player not found: " + playerName);
+                return true;
+            }
+            playerName = GenericEvents.cachedPlayerName(uuid);
+            if (args.length == 3) {
+                if (!plugin.cooldowns.resetCooldown(uuid, kit.name)) {
+                    sender.sendMessage(ChatColor.RED + "Player " + playerName
+                                       + " was not on cooldown: " + kit.name);
+                } else {
+                    sender.sendMessage(ChatColor.YELLOW + "Cooldown cleared: "
+                                       + playerName + ", " + kit.name);
+                    plugin.cooldowns.save();
+                }
+            } else if (args.length == 4) {
+                int seconds;
+                try {
+                    seconds = Integer.parseInt(args[3]);
+                } catch (NumberFormatException nfe) {
+                    sender.sendMessage(ChatColor.RED + "Seconds expected: "
+                                       + args[3]);
+                    return true;
+                }
+                long cd = plugin.cooldowns.setCooldown(uuid, kit.name, seconds);
+                sender.sendMessage(ChatColor.YELLOW + "Player " + playerName
+                                   + " now has cooldown for " + kit.name + ": "
+                                   + new Date(cd * 1000L));
             }
             return true;
         }

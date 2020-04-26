@@ -21,6 +21,7 @@ commands:
       /kitadmin cooldowns - List kit cooldowns
       /kitadmin cooldowns <kit> - List kit cooldowns
       /kitadmin player <name> - List player cooldowns
+      /kitadmin set <kit> <player> [seconds] - (Re)set cooldown
 permissions:
   kit.kit:
     default: op
