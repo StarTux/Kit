@@ -114,7 +114,7 @@ public final class AdminCommand implements CommandExecutor {
             return true;
         }
         case "set": {
-            if (args.length != 3 || args.length != 4) return false;
+            if (args.length != 3 && args.length != 4) return false;
             String kitName = args[1];
             String playerName = args[2];
             Kit kit = plugin.getKitNamed(kitName);
