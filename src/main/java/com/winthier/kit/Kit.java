@@ -127,5 +127,11 @@ public final class Kit {
         player.openInventory(holder.inventory);
         player.playSound(player.getEyeLocation(),
                          Sound.BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 1.0f, 1.0f);
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (!player.isValid()) return;
+                player.playSound(player.getEyeLocation(),
+                                 Sound.ENTITY_PLAYER_LEVELUP,
+                                 SoundCategory.PLAYERS, 0.25f, 2.0f);
+            }, 20L);
     }
 }
