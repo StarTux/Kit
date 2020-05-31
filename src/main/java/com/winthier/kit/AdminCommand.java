@@ -191,6 +191,7 @@ public final class AdminCommand implements CommandExecutor {
         info(sender, "items", kit.items);
         info(sender, "commands", kit.commands);
         info(sender, "description", kit.description);
+        info(sender, "messages", kit.messages);
         info(sender, "members", kit.members.values());
     }
 
