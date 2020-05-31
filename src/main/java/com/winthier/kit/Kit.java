@@ -7,28 +7,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.entity.Player;
 
-@RequiredArgsConstructor
+/**
+ * (De)serializable with Json.
+ */
 public final class Kit {
-    final KitPlugin plugin;
-    @Getter final String name;
-    @Getter List<String> messages;
-    @Getter String permission;
-    @Getter List<KitItem> items = new ArrayList<>();;
-    @Getter int cooldown;
-    @Getter boolean hidden;
-    List<String> commands;
-    Map<UUID, String> members;
-    List<String> description;
+    transient KitPlugin plugin;
+    @Getter transient String name = "";
+    @Getter List<String> messages = new ArrayList<>();
+    @Getter String permission = "";
+    @Getter List<KitItem> items = new ArrayList<>();
+    @Getter long cooldown = -1;
+    @Getter boolean hidden = false;
+    List<String> commands = new ArrayList<>();
+    Map<UUID, String> members = new HashMap<>();
+    List<String> description = new ArrayList<>();
+    transient Users users = new Users();
 
-    public boolean playerIsOnCooldown(UUID player) {
-        long cd = plugin.cooldowns.getCooldown(player, name);
+    public static final class Users {
+        Map<UUID, Long> cooldowns = new HashMap<>();
+    }
+
+    public Kit() { }
+
+    Kit(final KitPlugin plugin, final String name) {
+        this.plugin = plugin;
+        this.name = name;
+    }
+
+    public boolean playerIsOnCooldown(UUID uuid) {
+        long cd = users.cooldowns.get(uuid);
         if (cd == 0) return false;
         return cd > Instant.now().getEpochSecond();
     }
@@ -39,7 +52,7 @@ public final class Kit {
 
     public long getRemainingCooldown(Player player) {
         UUID uuid = player.getUniqueId();
-        long cd = plugin.cooldowns.getCooldown(uuid, name);
+        long cd = users.cooldowns.get(uuid);
         return Math.max(0, cd - Instant.now().getEpochSecond());
     }
 
@@ -49,9 +62,31 @@ public final class Kit {
         return player.hasPermission(permission);
     }
 
-    public void setPlayerOnCooldown(UUID player) {
-        plugin.cooldowns.setCooldown(player, name, cooldown);
-        plugin.cooldowns.save();
+    public boolean playerIsMember(Player player) {
+        if (members == null || members.isEmpty()) return true;
+        return members.containsKey(player.getUniqueId());
+    }
+
+    public boolean resetPlayerCooldown(UUID uuid) {
+        Long oldValue = users.cooldowns.remove(uuid);
+        return oldValue != null;
+    }
+
+    public long setPlayerOnCooldown(UUID uuid) {
+        return setPlayerOnCooldown(uuid, cooldown);
+    }
+
+    public long setPlayerOnCooldown(UUID uuid, long seconds) {
+        long result;
+        if (seconds >= 0) {
+            result = Instant.now().getEpochSecond() + seconds;
+            users.cooldowns.put(uuid, result);
+        } else {
+            result = Long.MAX_VALUE;
+            users.cooldowns.put(uuid, result);
+        }
+        plugin.saveUsers(this);
+        return result;
     }
 
     public void setPlayerOnCooldown(Player player) {
@@ -59,16 +94,11 @@ public final class Kit {
     }
 
     public boolean playerCanSee(Player player) {
-        if (!playerHasPermission(player)) return false;
-        if (hidden) return false;
-        if (members != null && !members.containsKey(player.getUniqueId())) return false;
-        return true;
+        return !hidden && playerIsMember(player) && playerHasPermission(player);
     }
 
     public boolean playerCanClaim(Player player) {
-        if (!playerHasPermission(player)) return false;
-        if (members != null && !members.containsKey(player.getUniqueId())) return false;
-        return true;
+        return playerIsMember(player) && playerHasPermission(player);
     }
 
     public boolean hasInfiniteCooldown() {
@@ -76,15 +106,15 @@ public final class Kit {
     }
 
     void load(ConfigurationSection config) {
-        cooldown = config.getInt("Cooldown");
+        cooldown = config.getLong("Cooldown");
         messages = config.getStringList("Messages");
         permission = config.getString("Permission");
         hidden = config.getBoolean("Hidden");
         MemoryConfiguration tmpSection = new MemoryConfiguration();
         for (Map<?, ?> map : config.getMapList("Items")) {
             ConfigurationSection section = tmpSection.createSection("tmp", map);
-            KitItem item = new KitItem(plugin);
-            item.load(section);
+            KitItem item = new KitItem();
+            item.load(plugin, section);
             items.add(item);
         }
         commands = config.getStringList("Commands");

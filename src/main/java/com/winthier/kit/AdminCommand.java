@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,23 @@ public final class AdminCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) return false;
         switch (args[0]) {
+        case "list": {
+            if (args.length != 1) return false;
+            sender.sendMessage(plugin.kits.size() + " kits loaded: "
+                               + plugin.kits.values().stream()
+                               .map(k -> k.name).collect(Collectors.joining(", ")));
+            return true;
+        }
+        case "info": {
+            if (args.length != 2) return false;
+            Kit kit = plugin.getKitNamed(args[1]);
+            if (kit == null) {
+                sender.sendMessage("Kit not found: " + args[1]);
+                return true;
+            }
+            sender.sendMessage(Json.serialize(kit));
+            return true;
+        }
         case "reload": {
             if (args.length != 1) return false;
             plugin.reload();
@@ -49,28 +67,27 @@ public final class AdminCommand implements CommandExecutor {
             return true;
         }
         case "cooldowns": {
-            if (args.length > 2) return false;
-            if (args.length == 1) {
-                sender.sendMessage(ChatColor.YELLOW + "Available cooldowns: "
-                                   + ChatColor.WHITE
-                                   + plugin.cooldowns.listCooldowns().stream()
-                                   .collect(Collectors.joining(", ")));
-            } else if (args.length == 2) {
-                String kitName = args[1];
-                sender.sendMessage(ChatColor.YELLOW + "Cooldowns for kit '" + kitName + "':");
-                long now = Instant.now().getEpochSecond();
-                for (UUID uuid : plugin.cooldowns.listCooldowns(kitName)) {
-                    String name = GenericEvents.cachedPlayerName(uuid);
-                    long cooldown = plugin.cooldowns.getCooldown(uuid, kitName);
-                    long dist = cooldown - now;
-                    if (dist <= 0) continue;
-                    String time = cooldown == Long.MAX_VALUE
-                        ? "Forever"
-                        : formatTime(dist);
-                    sender.sendMessage(ChatColor.GRAY + "- "
-                                       + ChatColor.YELLOW + name + ": "
-                                       + ChatColor.AQUA + time);
-                }
+            if (args.length != 2) return false;
+            String kitName = args[1];
+            Kit kit = plugin.getKitNamed(kitName);
+            if (kit == null) {
+                sender.sendMessage(ChatColor.RED + "Kit not found: " + kitName);
+                return true;
+            }
+            Set<UUID> uuids = kit.users.cooldowns.keySet();
+            sender.sendMessage("" + ChatColor.YELLOW + uuids.size() + "cooldowns for kit '" + kit.name + "':");
+            long now = Instant.now().getEpochSecond();
+            for (UUID uuid : uuids) {
+                String name = GenericEvents.cachedPlayerName(uuid);
+                long cooldown = kit.users.cooldowns.get(uuid);
+                long dist = cooldown - now;
+                if (dist <= 0) continue;
+                String time = cooldown == Long.MAX_VALUE
+                    ? "Forever"
+                    : formatTime(dist);
+                sender.sendMessage(ChatColor.GRAY + "- "
+                                   + ChatColor.YELLOW + name + ": "
+                                   + ChatColor.AQUA + time);
             }
             return true;
         }
@@ -86,8 +103,8 @@ public final class AdminCommand implements CommandExecutor {
             name = GenericEvents.cachedPlayerName(uuid);
             long now = Instant.now().getEpochSecond();
             List<String> ls = new ArrayList<>();
-            for (Kit kit : plugin.kits) {
-                long cd = plugin.cooldowns.getCooldown(uuid, kit.name);
+            for (Kit kit : plugin.kits.values()) {
+                long cd = kit.users.cooldowns.get(uuid);
                 if (cd == 0) continue;
                 long dist = cd - now;
                 String time;
@@ -129,28 +146,32 @@ public final class AdminCommand implements CommandExecutor {
             }
             playerName = GenericEvents.cachedPlayerName(uuid);
             if (args.length == 3) {
-                if (!plugin.cooldowns.resetCooldown(uuid, kit.name)) {
+                if (!kit.resetPlayerCooldown(uuid)) {
                     sender.sendMessage(ChatColor.RED + "Player " + playerName
                                        + " was not on cooldown: " + kit.name);
                 } else {
                     sender.sendMessage(ChatColor.YELLOW + "Cooldown cleared: "
                                        + playerName + ", " + kit.name);
-                    plugin.cooldowns.save();
                 }
             } else if (args.length == 4) {
-                int seconds;
+                long seconds;
                 try {
-                    seconds = Integer.parseInt(args[3]);
+                    seconds = Long.parseLong(args[3]);
                 } catch (NumberFormatException nfe) {
                     sender.sendMessage(ChatColor.RED + "Seconds expected: "
                                        + args[3]);
                     return true;
                 }
-                long cd = plugin.cooldowns.setCooldown(uuid, kit.name, seconds);
+                long cd = kit.setPlayerOnCooldown(uuid, seconds);
                 sender.sendMessage(ChatColor.YELLOW + "Player " + playerName
                                    + " now has cooldown for " + kit.name + ": "
                                    + new Date(cd * 1000L));
             }
+            return true;
+        }
+        case "migrate": {
+            int count = plugin.loadLegacyKits();
+            sender.sendMessage(count + " kits migrated.");
             return true;
         }
         default:

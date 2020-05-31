@@ -53,7 +53,7 @@ public final class KitCommand implements CommandExecutor {
     }
 
     void showKitList(Player player) {
-        List<Kit> kits = plugin.kits.stream()
+        List<Kit> kits = plugin.kits.values().stream()
             .filter(kit -> kit.playerCanSee(player))
             .collect(Collectors.toList());
         if (kits.isEmpty()) {

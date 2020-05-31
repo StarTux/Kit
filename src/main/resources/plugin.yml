@@ -16,9 +16,9 @@ commands:
     permission: kit.admin
     description: Admin interface
     usage: |-
+      /kitadmin list - List kits
       /kitadmin reload - Reload
       /kitadmin give <player> <kit> - Give to player
-      /kitadmin cooldowns - List kit cooldowns
       /kitadmin cooldowns <kit> - List kit cooldowns
       /kitadmin player <name> - List player cooldowns
       /kitadmin set <kit> <player> [seconds] - (Re)set cooldown
