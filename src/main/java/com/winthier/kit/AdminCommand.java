@@ -169,11 +169,6 @@ public final class AdminCommand implements CommandExecutor {
             }
             return true;
         }
-        case "migrate": {
-            int count = plugin.loadLegacyKits();
-            sender.sendMessage(count + " kits migrated.");
-            return true;
-        }
         default:
             return false;
         }

@@ -9,8 +9,6 @@ import java.util.UUID;
 import lombok.Getter;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.entity.Player;
 
 /**
@@ -103,36 +101,6 @@ public final class Kit {
 
     public boolean hasInfiniteCooldown() {
         return cooldown < 0;
-    }
-
-    void load(ConfigurationSection config) {
-        cooldown = config.getLong("Cooldown");
-        messages = config.getStringList("Messages");
-        permission = config.getString("Permission");
-        hidden = config.getBoolean("Hidden");
-        MemoryConfiguration tmpSection = new MemoryConfiguration();
-        for (Map<?, ?> map : config.getMapList("Items")) {
-            ConfigurationSection section = tmpSection.createSection("tmp", map);
-            KitItem item = new KitItem();
-            item.load(plugin, section);
-            items.add(item);
-        }
-        commands = config.getStringList("Commands");
-        if (config.isConfigurationSection("Members")) {
-            members = new HashMap<>();
-            ConfigurationSection section = config.getConfigurationSection("Members");
-            for (String key : section.getKeys(false)) {
-                UUID uuid;
-                try {
-                    uuid = UUID.fromString(key);
-                } catch (IllegalArgumentException iae) {
-                    plugin.getLogger().warning("Members: Invalid UUID: " + key);
-                    continue;
-                }
-                members.put(uuid, section.getString(key));
-            }
-        }
-        description = config.getStringList("Description");
     }
 
     /**

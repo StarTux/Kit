@@ -3,10 +3,7 @@ package com.winthier.kit;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Level;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class KitPlugin extends JavaPlugin {
@@ -31,33 +28,6 @@ public final class KitPlugin extends JavaPlugin {
     public void reload() {
         kits.clear();
         loadKitsFolder();
-    }
-
-    int loadLegacyKits() {
-        int count = 0;
-        final LegacyCooldowns cooldowns = new LegacyCooldowns(this);
-        cooldowns.load();
-        File file = new File(getDataFolder(), "kits.yml");
-        YamlConfiguration config = new YamlConfiguration();
-        try {
-            config.load(file);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-        for (String key : config.getKeys(false)) {
-            getLogger().info("Loading kit " + key);
-            ConfigurationSection section = config.getConfigurationSection(key);
-            Kit kit = new Kit(this, key);
-            kit.load(section);
-            for (UUID uuid : cooldowns.listCooldowns(kit.name)) {
-                kit.users.cooldowns.put(uuid, cooldowns.getCooldown(uuid, kit.name));
-            }
-            saveKit(kit);
-            saveUsers(kit);
-            kits.put(key, kit);
-            count += 1;
-        }
-        return count;
     }
 
     private void loadKitsFolder() {
