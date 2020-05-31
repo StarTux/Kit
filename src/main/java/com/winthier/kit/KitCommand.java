@@ -64,7 +64,7 @@ public final class KitCommand implements CommandExecutor {
         cb.append("Kits:").color(ChatColor.GRAY);
         for (Kit kit : kits) {
             cb.append(" ").reset();
-            String cmd = "/kit " + kit.name.toLowerCase();
+            String cmd = "/kit " + kit.name;
             cb.append("[" + kit.name + "]");
             cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd));
             if (kit.playerIsOnCooldown(player)) {
