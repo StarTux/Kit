@@ -4,6 +4,10 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class KitPlugin extends JavaPlugin {
@@ -21,8 +25,27 @@ public final class KitPlugin extends JavaPlugin {
         usersFolder.mkdirs();
         getCommand("kit").setExecutor(command);
         getCommand("kitadmin").setExecutor(new AdminCommand(this));
+        getCommand("kitedit").setExecutor(new EditCommand(this));
         getServer().getPluginManager().registerEvents(listener, this);
         reload();
+    }
+
+    @Override
+    public void onDisable() {
+        for (Player player : getServer().getOnlinePlayers()) {
+            InventoryView view = player.getOpenInventory();
+            if (view == null) continue;
+            Inventory topInventory = view.getTopInventory();
+            if (topInventory == null) continue;
+            InventoryHolder holder = topInventory.getHolder();
+            if (!(holder instanceof KitHolder)) continue;
+            KitHolder kitHolder = (KitHolder) holder;
+            Runnable onClose = kitHolder.onClose;
+            if (onClose == null) continue;
+            kitHolder.onClose = null;
+            player.closeInventory();
+            onClose.run();
+        }
     }
 
     public void reload() {
@@ -64,7 +87,7 @@ public final class KitPlugin extends JavaPlugin {
         getLogger().info(count + " kit(s) loaded");
     }
 
-    private void saveKit(Kit kit) {
+    void saveKit(Kit kit) {
         File file = new File(kitsFolder, kit.name + ".json");
         Json.save(file, kit, true);
     }

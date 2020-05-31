@@ -13,6 +13,7 @@ commands:
       /kit - List kits
       /kit <kit> - Claim kit
   kitadmin:
+    aliases: [kita]
     permission: kit.admin
     description: Admin interface
     usage: |-
@@ -22,6 +23,26 @@ commands:
       /kitadmin cooldowns <kit> - List kit cooldowns
       /kitadmin player <name> - List player cooldowns
       /kitadmin set <kit> <player> [seconds] - (Re)set cooldown
+  kitedit:
+    aliases: [kite]
+    permission: kit.admin
+    description: Created and edit kits
+    usage: |-
+      /kite create <name> - Make new kit (hidden)
+      /kite permission <kit> <permission> - Set permission (. clears)
+      /kite items <kit> - Edit items
+      /kite cooldown <kit> <seconds> - Set cooldown (-1 means infinite)
+      /kite hide <kit> - Hide kit
+      /kite show <kit> - Make kit public
+      /kite msg <kit> <message> - Add message
+      /kite rmmsg <kit> <index> - Remove message
+      /kite cmd <kit> <command> - Add command
+        Placeholder: {player}
+      /kite rmcmd <kit> <index> - Remove command
+      /kite desc <kit> <description> - Add description
+      /kite rmdesc <kit> <index> - Remove description
+      /kite member <kit> <name...> - Add member
+      /kite rmmember <kit> <name> - Remove member
 permissions:
   kit.kit:
     default: op

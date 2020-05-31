@@ -3,6 +3,7 @@ package com.winthier.kit;
 import com.winthier.generic_events.GenericEvents;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -36,7 +37,7 @@ public final class AdminCommand implements CommandExecutor {
                 sender.sendMessage("Kit not found: " + args[1]);
                 return true;
             }
-            sender.sendMessage(Json.serialize(kit));
+            kitInfo(sender, kit);
             return true;
         }
         case "reload": {
@@ -75,19 +76,21 @@ public final class AdminCommand implements CommandExecutor {
                 return true;
             }
             Set<UUID> uuids = kit.users.cooldowns.keySet();
-            sender.sendMessage("" + ChatColor.YELLOW + uuids.size() + "cooldowns for kit '" + kit.name + "':");
+            sender.sendMessage("" + ChatColor.YELLOW + uuids.size() + " cooldowns for kit '" + kit.name + "':");
             long now = Instant.now().getEpochSecond();
             for (UUID uuid : uuids) {
                 String name = GenericEvents.cachedPlayerName(uuid);
-                long cooldown = kit.users.cooldowns.get(uuid);
+                long cooldown = kit.getPlayerCooldown(uuid);
                 long dist = cooldown - now;
-                if (dist <= 0) continue;
-                String time = cooldown == Long.MAX_VALUE
-                    ? "Forever"
-                    : formatTime(dist);
-                sender.sendMessage(ChatColor.GRAY + "- "
-                                   + ChatColor.YELLOW + name + ": "
-                                   + ChatColor.AQUA + time);
+                String time;
+                if (cooldown == Long.MAX_VALUE) {
+                    time = "Forever";
+                } else if (dist <= 0) {
+                    time = "Expired";
+                } else {
+                    time = formatTime(dist);
+                }
+                sender.sendMessage(" " + ChatColor.YELLOW + name + ": " + ChatColor.AQUA + time);
             }
             return true;
         }
@@ -104,7 +107,7 @@ public final class AdminCommand implements CommandExecutor {
             long now = Instant.now().getEpochSecond();
             List<String> ls = new ArrayList<>();
             for (Kit kit : plugin.kits.values()) {
-                long cd = kit.users.cooldowns.get(uuid);
+                long cd = kit.getPlayerCooldown(uuid);
                 if (cd == 0) continue;
                 long dist = cd - now;
                 String time;
@@ -178,5 +181,25 @@ public final class AdminCommand implements CommandExecutor {
         long minutes = seconds / 60;
         long hours = minutes / 60;
         return String.format("%d:%02d.%02d", hours, minutes % 60L, seconds % 60L);
+    }
+
+    void kitInfo(CommandSender sender, Kit kit) {
+        info(sender, "name", kit.name);
+        info(sender, "hidden", "" + kit.hidden);
+        info(sender, "cooldown", "" + kit.cooldown);
+        info(sender, "permission", kit.permission);
+        info(sender, "items", kit.items);
+        info(sender, "commands", kit.commands);
+        info(sender, "description", kit.description);
+        info(sender, "members", kit.members.values());
+    }
+
+    void info(CommandSender sender, String key, String value) {
+        sender.sendMessage(ChatColor.GRAY + key + ChatColor.RESET + ": " + value);
+    }
+
+    void info(CommandSender sender, String key, Collection<? extends Object> list) {
+        sender.sendMessage(ChatColor.GRAY + key + ChatColor.RESET + "(" + list.size() + "): "
+                           + list.stream().map(Object::toString).collect(Collectors.joining(", ")));
     }
 }

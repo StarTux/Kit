@@ -1,11 +1,11 @@
 package com.winthier.kit;
 
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 
 public final class KitHolder implements InventoryHolder {
-    Kit kit;
     Inventory inventory;
+    Runnable onClose;
 
     @Override
     public Inventory getInventory() {

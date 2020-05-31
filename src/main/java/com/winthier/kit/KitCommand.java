@@ -91,7 +91,7 @@ public final class KitCommand implements CommandExecutor {
                 List<BaseComponent> tooltip = new ArrayList<>();
                 tooltip.add(new TextComponent("" + ChatColor.GREEN + cmd));
                 for (String line : kit.description) {
-                    tooltip.add(new TextComponent("\n" + fmt(line)));
+                    tooltip.add(new TextComponent("\n" + ChatColor.RESET + fmt(line)));
                 }
                 cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                                         tooltip.toArray(new TextComponent[0])));

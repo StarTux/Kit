@@ -10,6 +10,7 @@ import lombok.Getter;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * (De)serializable with Json.
@@ -38,8 +39,13 @@ public final class Kit {
         this.name = name;
     }
 
+    public long getPlayerCooldown(UUID uuid) {
+        Long cd = users.cooldowns.get(uuid);
+        return cd != null ? cd : 0;
+    }
+
     public boolean playerIsOnCooldown(UUID uuid) {
-        long cd = users.cooldowns.get(uuid);
+        long cd = getPlayerCooldown(uuid);
         if (cd == 0) return false;
         return cd > Instant.now().getEpochSecond();
     }
@@ -50,7 +56,7 @@ public final class Kit {
 
     public long getRemainingCooldown(Player player) {
         UUID uuid = player.getUniqueId();
-        long cd = users.cooldowns.get(uuid);
+        long cd = getPlayerCooldown(uuid);
         return Math.max(0, cd - Instant.now().getEpochSecond());
     }
 
@@ -67,7 +73,9 @@ public final class Kit {
 
     public boolean resetPlayerCooldown(UUID uuid) {
         Long oldValue = users.cooldowns.remove(uuid);
-        return oldValue != null;
+        if (oldValue == null) return false;
+        plugin.saveUsers(this);
+        return true;
     }
 
     public long setPlayerOnCooldown(UUID uuid) {
@@ -108,19 +116,39 @@ public final class Kit {
      * Continued in EventListener.
      */
     public void giveToPlayer(Player player) {
-        int size = ((items.size() - 1) / 9 + 1) * 9;
+        int count = items.size();
+        int size = ((count - 1) / 9 + 1) * 9;
         KitHolder holder = new KitHolder();
-        holder.kit = this;
         holder.inventory = plugin.getServer().createInventory(holder, size, name);
-        int[] slots = new int[size];
-        slots[0] = size / 2;
-        for (int i = 0; i < size / 2; i += 1) {
-            slots[i + i + 1] = slots[0] - i;
-            slots[i + i + 2] = slots[0] + i;
-        }
+        holder.onClose = () -> {
+            for (ItemStack item : holder.inventory.getContents()) {
+                if (item == null || item.getAmount() == 0) continue;
+                for (ItemStack drop : player.getInventory().addItem(item).values()) {
+                    player.getWorld()
+                        .dropItem(player.getEyeLocation(), drop)
+                        .setPickupDelay(0);
+                }
+            }
+            plugin.command.showKitList(player);
+            for (String msg : messages) {
+                player.sendMessage(KitCommand.fmt(msg));
+            }
+            for (String cmd : commands) {
+                cmd = cmd.replace("{player}", player.getName());
+                plugin.getLogger().info("Issuing command: " + cmd);
+                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(),
+                                                   cmd);
+            }
+            player.playSound(player.getEyeLocation(),
+                             Sound.BLOCK_CHEST_CLOSE, SoundCategory.BLOCKS, 1.0f, 1.0f);
+        };
+        int offset = count < 9
+            ? (9 - count) / 2
+            : 0;
         int i = 0;
         for (KitItem item : items) {
-            holder.inventory.setItem(slots[i++], item.createItemStack());
+            int index = offset + i++;
+            holder.inventory.setItem(index, item.createItemStack());
         }
         player.openInventory(holder.inventory);
         player.playSound(player.getEyeLocation(),
