@@ -55,6 +55,7 @@ public final class KitCommand implements CommandExecutor {
     void showKitList(Player player) {
         List<Kit> kits = plugin.kits.values().stream()
             .filter(kit -> kit.playerCanSee(player))
+            .filter(kit -> !(kit.playerIsOnCooldown(player) && kit.hasInfiniteCooldown()))
             .collect(Collectors.toList());
         if (kits.isEmpty()) {
             player.sendMessage(ChatColor.RED + "There are no kits available for you.");
