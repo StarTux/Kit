@@ -1,6 +1,9 @@
 package com.winthier.kit;
 
+import com.cavetale.sidebar.PlayerSidebarEvent;
+import com.cavetale.sidebar.Priority;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -20,5 +23,11 @@ public final class EventListener implements Listener {
         if (onClose == null) return;
         holder.onClose = null;
         plugin.getServer().getScheduler().runTask(plugin, onClose);
+    }
+
+    @EventHandler
+    public void onPlayerSidebar(PlayerSidebarEvent event) {
+        if (!plugin.sidebarList.contains(event.getPlayer().getUniqueId())) return;
+        event.addLines(plugin, Priority.HIGH, ChatColor.AQUA + "You have a " + ChatColor.YELLOW + "/kit");
     }
 }

@@ -2,8 +2,12 @@ package com.winthier.kit;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -16,6 +20,7 @@ public final class KitPlugin extends JavaPlugin {
     final KitCommand command = new KitCommand(this);
     private File kitsFolder;
     private File usersFolder;
+    final Set<UUID> sidebarList = new HashSet<>();
 
     @Override
     public void onEnable() {
@@ -27,6 +32,7 @@ public final class KitPlugin extends JavaPlugin {
         getCommand("kitadmin").setExecutor(new AdminCommand(this));
         getCommand("kitedit").setExecutor(new EditCommand(this));
         getServer().getPluginManager().registerEvents(listener, this);
+        getServer().getScheduler().runTaskTimer(this, this::updateSidebarList, 200, 200);
         reload();
     }
 
@@ -99,5 +105,16 @@ public final class KitPlugin extends JavaPlugin {
 
     public Kit getKitNamed(String name) {
         return kits.get(name);
+    }
+
+    void updateSidebarList() {
+        sidebarList.clear();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            for (Kit kit : kits.values()) {
+                if (kit.playerCanSee(player) && !kit.playerIsOnCooldown(player)) {
+                    sidebarList.add(player.getUniqueId());
+                }
+            }
+        }
     }
 }
