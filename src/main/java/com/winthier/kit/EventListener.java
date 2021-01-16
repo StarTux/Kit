@@ -22,7 +22,7 @@ public final class EventListener implements Listener {
         Runnable onClose = holder.onClose;
         if (onClose == null) return;
         holder.onClose = null;
-        plugin.getServer().getScheduler().runTask(plugin, onClose);
+        onClose.run();
     }
 
     @EventHandler

@@ -49,6 +49,7 @@ public final class KitCommand implements CommandExecutor {
         kit.setPlayerOnCooldown(player);
         plugin.getLogger().info("Giving kit " + kit.name + " to " + player.getName());
         kit.giveToPlayer(player);
+        plugin.updateSidebarList();
         return true;
     }
 
