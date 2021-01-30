@@ -136,6 +136,22 @@ public final class EditCommand implements CommandExecutor {
             sender.sendMessage("" + ChatColor.YELLOW + count + " members removed");
             break;
         }
+        case "copy": {
+            if (args.length != 1) return false;
+            String newKitName = args[0];
+            if (plugin.getKitNamed(newKitName) != null) {
+                throw new Wrong("Kit already exists: " + newKitName);
+            }
+            Kit newKit = kit.clone();
+            newKit.plugin = plugin;
+            newKit.name = newKitName;
+            newKit.hidden = true;
+            newKit.members.clear();
+            plugin.kits.put(newKitName, newKit);
+            plugin.saveKit(newKit);
+            sender.sendMessage(ChatColor.YELLOW + "Kit cloned: " + kit.getName() + " => " + newKit.getName());
+            return true;
+        }
         default: throw new Wrong("Command not found: " + cmd);
         }
         plugin.saveKit(kit);

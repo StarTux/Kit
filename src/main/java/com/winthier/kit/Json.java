@@ -8,15 +8,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.function.Supplier;
-import lombok.RequiredArgsConstructor;
-import org.bukkit.plugin.java.JavaPlugin;
 
-@RequiredArgsConstructor
 public final class Json {
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     public static final Gson PRETTY = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting()
         .create();
-    private final JavaPlugin plugin;
+
+    private Json() { }
 
     public static <T> T load(final File file, Class<T> type, Supplier<T> dfl) {
         if (!file.exists()) {
@@ -54,15 +52,5 @@ public final class Json {
 
     public static <T> T deserialize(String json, Class<T> type) {
         return GSON.fromJson(json, type);
-    }
-
-    public <T> T load(String path, Class<T> type, Supplier<T> dfl) {
-        File file = new File(plugin.getDataFolder(), path);
-        return load(file, type, dfl);
-    }
-
-    public void save(String path, Object obj, boolean pretty) {
-        File file = new File(plugin.getDataFolder(), path);
-        save(file, obj, pretty);
     }
 }

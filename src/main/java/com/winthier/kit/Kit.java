@@ -160,4 +160,8 @@ public final class Kit {
                                  SoundCategory.PLAYERS, 0.25f, 2.0f);
             }, 20L);
     }
+
+    public Kit clone() {
+        return Json.deserialize(Json.serialize(this), Kit.class);
+    }
 }
