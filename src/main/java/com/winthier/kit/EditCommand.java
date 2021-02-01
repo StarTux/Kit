@@ -126,7 +126,7 @@ public final class EditCommand implements CommandExecutor {
                 UUID uuid = GenericEvents.cachedPlayerUuid(name);
                 if (uuid == null) throw new Wrong("Player not found: " + name);
                 String oldName = kit.members.remove(uuid);
-                if (oldName != null) {
+                if (oldName == null) {
                     sender.sendMessage(ChatColor.RED + "Not a member: " + name);
                     continue;
                 }
