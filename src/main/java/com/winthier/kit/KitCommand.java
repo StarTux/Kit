@@ -125,7 +125,7 @@ public final class KitCommand implements CommandExecutor {
                 lore.add(new ComponentBuilder("Kit").italic(true).color(ChatColor.GRAY).create());
             }
             for (String line : kit.getDescription()) {
-                lore.add(new ComponentBuilder(line).italic(false).color(ChatColor.WHITE).create());
+                lore.add(new ComponentBuilder(fmt(line)).italic(false).color(ChatColor.WHITE).create());
             }
             meta.setLoreComponents(lore);
             icon.setItemMeta(meta);
