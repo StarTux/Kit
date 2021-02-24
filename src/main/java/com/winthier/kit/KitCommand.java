@@ -1,19 +1,24 @@
 package com.winthier.kit;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 
 @RequiredArgsConstructor
 public final class KitCommand implements CommandExecutor {
@@ -25,16 +30,15 @@ public final class KitCommand implements CommandExecutor {
             sender.sendMessage("Player expected");
             return true;
         }
-        if (args.length == 0) {
-            showKitList(player);
-            return true;
-        }
-        if (args.length != 1) return false;
-        String kitName = args[0];
-        Kit kit = plugin.getKitNamed(kitName);
-        if (kit == null || !kit.playerCanClaim(player)) {
-            player.sendMessage(ChatColor.RED + "Kit not found: " + kitName);
-            return true;
+        if (args.length != 0) return false;
+        showKitList(player);
+        return true;
+    }
+
+    void openKit(Player player, Kit kit) {
+        if (!kit.playerCanClaim(player)) {
+            player.sendMessage(ChatColor.RED + "Kit not found: " + kit.getName());
+            return;
         }
         if (kit.playerIsOnCooldown(player)) {
             if (kit.hasInfiniteCooldown()) {
@@ -44,13 +48,18 @@ public final class KitCommand implements CommandExecutor {
                 player.sendMessage(ChatColor.RED + "You are on cooldown: "
                                    + ChatColor.GRAY + formatSeconds(secs));
             }
-            return true;
+            return;
         }
         kit.setPlayerOnCooldown(player);
         plugin.getLogger().info("Giving kit " + kit.name + " to " + player.getName());
         kit.giveToPlayer(player);
         plugin.updateSidebarList();
-        return true;
+    }
+
+    private static int slotDist(int slot, int cx, int cy) {
+        int x = slot % 9;
+        int y = slot / 9;
+        return Math.abs(x - cx) + Math.abs(y - cy);
     }
 
     void showKitList(Player player) {
@@ -62,57 +71,87 @@ public final class KitCommand implements CommandExecutor {
             player.sendMessage(ChatColor.RED + "There are no kits available for you.");
             return;
         }
-        ComponentBuilder cb = new ComponentBuilder();
-        cb.append("Kits:").color(ChatColor.GRAY);
-        for (Kit kit : kits) {
-            cb.append(" ").reset();
-            String cmd = "/kit " + kit.name;
-            cb.append("[" + kit.name + "]");
-            cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd));
-            if (kit.playerIsOnCooldown(player)) {
-                cb.color(ChatColor.DARK_GRAY);
-                String remain;
-                if (kit.hasInfiniteCooldown()) {
-                    remain = ChatColor.RED + "Already claimed!";
-                } else {
-                    long secs = kit.getRemainingCooldown(player);
-                    remain = ChatColor.DARK_GRAY + "You are on cooldown: "
-                        + ChatColor.GRAY + formatSeconds(secs);
+        int rows = Math.max(3, Math.min(6, (kits.size() - 1) / 9 + 1));
+        Gui gui = new Gui(plugin);
+        gui.title("Kits");
+        gui.size(rows * 9);
+        List<Integer> slots = new ArrayList<>(rows * 9);
+        for (int i = 0; i < rows * 9; i += 1) slots.add(i);
+        Collections.sort(slots, (a, b) -> Integer.compare(slotDist(a, 4, rows / 2), slotDist(b, 4, rows / 2)));
+        if (fillGui(gui, kits, slots, player, false)) {
+            new BukkitRunnable() {
+                @Override public void run() {
+                    if (!gui.isOpened() || gui.isClosed() || !player.isValid()) {
+                        cancel();
+                        return;
+                    }
+                    if (!fillGui(gui, kits, slots, player, true)) {
+                        cancel();
+                    }
                 }
-                List<BaseComponent> tooltip = new ArrayList<>();
-                tooltip.add(new TextComponent("" + ChatColor.DARK_GRAY + cmd));
-                tooltip.add(new TextComponent("\n" + remain));
-                for (String line : kit.description) {
-                    line = "\n" + ChatColor.stripColor(fmt(line));
-                    tooltip.add(new TextComponent("" + ChatColor.DARK_GRAY + line));
-                }
-                cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                        tooltip.toArray(new TextComponent[0])));
-            } else {
-                cb.color(ChatColor.GREEN);
-                List<BaseComponent> tooltip = new ArrayList<>();
-                tooltip.add(new TextComponent("" + ChatColor.GREEN + cmd));
-                for (String line : kit.description) {
-                    tooltip.add(new TextComponent("\n" + ChatColor.RESET + fmt(line)));
-                }
-                cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                        tooltip.toArray(new TextComponent[0])));
-            }
+            }.runTaskTimer(plugin, 20L, 20L);
         }
-        player.spigot().sendMessage(cb.create());
+        gui.open(player);
+        player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, SoundCategory.MASTER, 0.5f, 1.0f);
     }
 
-    String formatSeconds(long seconds) {
+    /**
+     * @return true if further updates are required, false otherwise
+     */
+    private boolean fillGui(Gui gui, List<Kit> kits, List<Integer> slots, Player player, boolean update) {
+        boolean result = false;
+        for (int i = 0; i < kits.size(); i += 1) {
+            if (i >= slots.size()) break;
+            int slot = slots.get(i);
+            Kit kit = kits.get(i);
+            if (update && kit.hasInfiniteCooldown()) continue;
+            ItemStack icon = kit.getItems().isEmpty()
+                ? new ItemStack(Material.LIME_SHULKER_BOX)
+                : kit.getItems().get(0).createItemStack();
+            ItemMeta meta = icon.getItemMeta();
+            meta.addItemFlags(ItemFlag.values());
+            meta.setDisplayNameComponent(new ComponentBuilder(kit.getName()).italic(false).color(ChatColor.GREEN).create());
+            List<BaseComponent[]> lore = new ArrayList<>();
+            if (kit.playerIsOnCooldown(player)) {
+                if (kit.hasInfiniteCooldown()) {
+                    lore.add(new ComponentBuilder("You already claimed this kit.").color(ChatColor.RED).create());
+                } else {
+                    long secs = kit.getRemainingCooldown(player);
+                    lore.add(new ComponentBuilder("Cooldown: ").color(ChatColor.RED).italic(false)
+                             .append(formatSeconds(secs)).color(ChatColor.GRAY).create());
+                    result = true;
+                }
+            } else {
+                lore.add(new ComponentBuilder("Kit").italic(true).color(ChatColor.GRAY).create());
+            }
+            for (String line : kit.getDescription()) {
+                lore.add(new ComponentBuilder(line).italic(false).color(ChatColor.WHITE).create());
+            }
+            meta.setLoreComponents(lore);
+            icon.setItemMeta(meta);
+            gui.setItem(slot, icon, click -> {
+                    if (!click.isLeftClick()) {
+                        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 1.0f, 0.5f);
+                        return;
+                    }
+                        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 1.0f, 1.0f);
+                    openKit(player, kit);
+                });
+        }
+        return result;
+    }
+
+    static String formatSeconds(long seconds) {
         long minutes = seconds / 60;
         if (minutes <= 60) {
             return String.format("%02d:%02d", minutes, seconds % 60);
         }
         long hours = minutes / 60;
         if (hours <= 24) {
-            return String.format("%02dh%02d:%02d", hours, minutes % 60, seconds % 60);
+            return String.format("%dh %02d:%02d", hours, minutes % 60, seconds % 60);
         }
         long days = hours / 24;
-        return String.format("%d%02dh%02d:%02d", days, hours % 24, minutes % 60, seconds % 60);
+        return String.format("%dd %dh %02d:%02d", days, hours % 24, minutes % 60, seconds % 60);
     }
 
     static String fmt(String str) {

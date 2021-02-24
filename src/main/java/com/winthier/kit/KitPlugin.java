@@ -34,10 +34,12 @@ public final class KitPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(listener, this);
         getServer().getScheduler().runTaskTimer(this, this::updateSidebarList, 200, 200);
         reload();
+        Gui.enable(this);
     }
 
     @Override
     public void onDisable() {
+        Gui.disable(this);
         for (Player player : getServer().getOnlinePlayers()) {
             InventoryView view = player.getOpenInventory();
             if (view == null) continue;

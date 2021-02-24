@@ -15,14 +15,15 @@ import org.bukkit.inventory.ItemStack;
 /**
  * (De)serializable with Json.
  */
+@Getter
 public final class Kit {
     transient KitPlugin plugin;
-    @Getter transient String name = "";
-    @Getter List<String> messages = new ArrayList<>();
-    @Getter String permission = "";
-    @Getter List<KitItem> items = new ArrayList<>();
-    @Getter long cooldown = -1;
-    @Getter boolean hidden = false;
+    transient String name = "";
+    List<String> messages = new ArrayList<>();
+    String permission = "";
+    List<KitItem> items = new ArrayList<>();
+    long cooldown = -1;
+    boolean hidden = false;
     List<String> commands = new ArrayList<>();
     Map<UUID, String> members = new HashMap<>();
     List<String> description = new ArrayList<>();
@@ -129,7 +130,6 @@ public final class Kit {
                         .setPickupDelay(0);
                 }
             }
-            plugin.command.showKitList(player);
             for (String msg : messages) {
                 player.sendMessage(KitCommand.fmt(msg));
             }
@@ -139,8 +139,7 @@ public final class Kit {
                 plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(),
                                                    cmd);
             }
-            player.playSound(player.getEyeLocation(),
-                             Sound.BLOCK_CHEST_CLOSE, SoundCategory.BLOCKS, 1.0f, 1.0f);
+            player.playSound(player.getLocation(), Sound.BLOCK_CHEST_CLOSE, SoundCategory.BLOCKS, 1.0f, 1.0f);
         };
         int offset = count < 9
             ? (9 - count) / 2
@@ -151,13 +150,10 @@ public final class Kit {
             holder.inventory.setItem(index, item.createItemStack());
         }
         player.openInventory(holder.inventory);
-        player.playSound(player.getEyeLocation(),
-                         Sound.BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 1.0f, 1.0f);
+        player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 1.0f, 1.0f);
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 if (!player.isValid()) return;
-                player.playSound(player.getEyeLocation(),
-                                 Sound.ENTITY_PLAYER_LEVELUP,
-                                 SoundCategory.PLAYERS, 0.25f, 2.0f);
+                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 2.0f);
             }, 20L);
     }
 
