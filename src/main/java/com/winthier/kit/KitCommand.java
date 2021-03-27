@@ -1,5 +1,6 @@
 package com.winthier.kit;
 
+import com.cavetale.mytems.MytemsPlugin;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -105,9 +106,14 @@ public final class KitCommand implements CommandExecutor {
             int slot = slots.get(i);
             Kit kit = kits.get(i);
             if (update && kit.hasInfiniteCooldown()) continue;
-            ItemStack icon = kit.getItems().isEmpty()
-                ? new ItemStack(Material.LIME_SHULKER_BOX)
-                : kit.getItems().get(0).createItemStack();
+            final ItemStack icon;
+            if (kit.getItems().isEmpty()) {
+                icon = new ItemStack(Material.LIME_SHULKER_BOX);
+            } else {
+                ItemStack original = kit.getItems().get(0).createItemStack();
+                ItemStack fixed = MytemsPlugin.getInstance().fixItemStack(original);
+                icon = fixed != null ? fixed : original;
+            }
             ItemMeta meta = icon.getItemMeta();
             meta.addItemFlags(ItemFlag.values());
             meta.setDisplayNameComponent(new ComponentBuilder(kit.getName()).italic(false).color(ChatColor.GREEN).create());
