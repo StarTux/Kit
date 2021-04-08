@@ -1,6 +1,6 @@
 package com.winthier.kit;
 
-import com.cavetale.mytems.MytemsPlugin;
+import com.cavetale.mytems.Mytems;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -148,9 +148,14 @@ public final class Kit {
         int i = 0;
         for (KitItem item : items) {
             int index = offset + i++;
-            holder.inventory.setItem(index, item.createItemStack());
+            ItemStack itemStack = item.createItemStack();
+            Mytems mytems = Mytems.forItem(itemStack);
+            if (mytems != null) {
+                String serialized = mytems.serializeItem(itemStack);
+                itemStack = Mytems.deserializeItem(serialized, player);
+            }
+            holder.inventory.setItem(index, itemStack);
         }
-        MytemsPlugin.getInstance().fixInventory(holder.inventory);
         player.openInventory(holder.inventory);
         player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 1.0f, 1.0f);
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
