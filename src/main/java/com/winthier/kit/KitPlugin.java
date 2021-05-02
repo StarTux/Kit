@@ -112,6 +112,7 @@ public final class KitPlugin extends JavaPlugin {
     void updateSidebarList() {
         sidebarList.clear();
         for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!player.hasPermission("kit.kit")) continue;
             for (Kit kit : kits.values()) {
                 if (kit.playerCanSee(player) && !kit.playerIsOnCooldown(player)) {
                     sidebarList.add(player.getUniqueId());
