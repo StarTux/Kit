@@ -197,9 +197,9 @@ public final class EditCommand implements TabExecutor {
         if (args.length == 0) return null;
         String arg = args[args.length - 1];
         if (args.length == 1) {
-            return Stream.of("create", "permission", "items",
-            "cooldown", "hide", "show", "msg", "rmmsg", "cmd",
-            "rmcmd", "desc", "rmdesc", "member", "rmmember")
+            return Stream.of("create", "permission", "items", "info",
+                             "cooldown", "hide", "show", "msg", "rmmsg", "cmd",
+                             "rmcmd", "desc", "rmdesc", "member", "rmmember")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
         }
