@@ -9,13 +9,13 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 @RequiredArgsConstructor
-public final class EditCommand implements CommandExecutor {
+public final class EditCommand implements TabExecutor {
     final KitPlugin plugin;
 
     final class Wrong extends Exception {
@@ -152,6 +152,11 @@ public final class EditCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.YELLOW + "Kit cloned: " + kit.getName() + " => " + newKit.getName());
             return true;
         }
+        case "info": {
+            if (args.length != 0) return false;
+            plugin.adminCommand.kitInfo(sender, kit);
+            return true;
+        }
         default: throw new Wrong("Command not found: " + cmd);
         }
         plugin.saveKit(kit);
@@ -185,5 +190,24 @@ public final class EditCommand implements CommandExecutor {
         }
         String line = list.remove(index);
         sender.sendMessage(ChatColor.YELLOW + " Line " + index + " removed: " + ChatColor.RESET + line);
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) return null;
+        String arg = args[args.length - 1];
+        if (args.length == 1) {
+            return Stream.of("create", "permission", "items",
+            "cooldown", "hide", "show", "msg", "rmmsg", "cmd",
+            "rmcmd", "desc", "rmdesc", "member", "rmmember")
+                .filter(s -> s.contains(arg))
+                .collect(Collectors.toList());
+        }
+        if (args.length == 2) {
+            return plugin.kits.keySet().stream()
+                .filter(s -> s.contains(arg))
+                .collect(Collectors.toList());
+        }
+        return null;
     }
 }

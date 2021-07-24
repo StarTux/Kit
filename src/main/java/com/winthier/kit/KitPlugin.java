@@ -21,6 +21,8 @@ public final class KitPlugin extends JavaPlugin {
     private File kitsFolder;
     private File usersFolder;
     final Set<UUID> sidebarList = new HashSet<>();
+    protected final AdminCommand adminCommand = new AdminCommand(this);
+    protected final EditCommand editCommand = new EditCommand(this);
 
     @Override
     public void onEnable() {
@@ -29,8 +31,8 @@ public final class KitPlugin extends JavaPlugin {
         usersFolder = new File(getDataFolder(), "users");
         usersFolder.mkdirs();
         getCommand("kit").setExecutor(command);
-        getCommand("kitadmin").setExecutor(new AdminCommand(this));
-        getCommand("kitedit").setExecutor(new EditCommand(this));
+        getCommand("kitadmin").setExecutor(adminCommand);
+        getCommand("kitedit").setExecutor(editCommand);
         getServer().getPluginManager().registerEvents(listener, this);
         getServer().getScheduler().runTaskTimer(this, this::updateSidebarList, 200, 200);
         reload();
