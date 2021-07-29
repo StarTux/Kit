@@ -1,6 +1,6 @@
 package com.winthier.kit;
 
-import com.winthier.generic_events.GenericEvents;
+import com.winthier.playercache.PlayerCache;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -107,7 +107,7 @@ public final class EditCommand implements TabExecutor {
         case "member": {
             int count = 0;
             for (String name : args) {
-                UUID uuid = GenericEvents.cachedPlayerUuid(name);
+                UUID uuid = PlayerCache.uuidForName(name);
                 if (uuid == null) throw new Wrong("Player not found: " + name);
                 if (kit.members.containsKey(uuid)) {
                     sender.sendMessage(ChatColor.RED + "Already added: " + name);
@@ -123,7 +123,7 @@ public final class EditCommand implements TabExecutor {
         case "rmmember": {
             int count = 0;
             for (String name : args) {
-                UUID uuid = GenericEvents.cachedPlayerUuid(name);
+                UUID uuid = PlayerCache.uuidForName(name);
                 if (uuid == null) throw new Wrong("Player not found: " + name);
                 String oldName = kit.members.remove(uuid);
                 if (oldName == null) {

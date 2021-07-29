@@ -1,6 +1,6 @@
 package com.winthier.kit;
 
-import com.winthier.generic_events.GenericEvents;
+import com.winthier.playercache.PlayerCache;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -79,7 +79,7 @@ public final class AdminCommand implements CommandExecutor {
             sender.sendMessage("" + ChatColor.YELLOW + uuids.size() + " cooldowns for kit '" + kit.name + "':");
             long now = Instant.now().getEpochSecond();
             for (UUID uuid : uuids) {
-                String name = GenericEvents.cachedPlayerName(uuid);
+                String name = PlayerCache.nameForUuid(uuid);
                 long cooldown = kit.getPlayerCooldown(uuid);
                 long dist = cooldown - now;
                 String time;
@@ -97,13 +97,13 @@ public final class AdminCommand implements CommandExecutor {
         case "player": {
             if (args.length != 2) return false;
             String name = args[1];
-            UUID uuid = GenericEvents.cachedPlayerUuid(name);
+            UUID uuid = PlayerCache.uuidForName(name);
             if (uuid == null) {
                 sender.sendMessage(ChatColor.RED + "Unknown player: "
                                    + name);
                 return true;
             }
-            name = GenericEvents.cachedPlayerName(uuid);
+            name = PlayerCache.nameForUuid(uuid);
             long now = Instant.now().getEpochSecond();
             List<String> ls = new ArrayList<>();
             for (Kit kit : plugin.kits.values()) {
@@ -142,12 +142,12 @@ public final class AdminCommand implements CommandExecutor {
                 sender.sendMessage(ChatColor.RED + "Kit not found: " + kitName);
                 return true;
             }
-            UUID uuid = GenericEvents.cachedPlayerUuid(playerName);
+            UUID uuid = PlayerCache.uuidForName(playerName);
             if (uuid == null) {
                 sender.sendMessage(ChatColor.RED + "Player not found: " + playerName);
                 return true;
             }
-            playerName = GenericEvents.cachedPlayerName(uuid);
+            playerName = PlayerCache.nameForUuid(uuid);
             if (args.length == 3) {
                 if (!kit.resetPlayerCooldown(uuid)) {
                     sender.sendMessage(ChatColor.RED + "Player " + playerName
