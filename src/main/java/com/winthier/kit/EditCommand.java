@@ -56,7 +56,7 @@ public final class EditCommand implements TabExecutor {
         case "items":
             if (!(sender instanceof Player)) throw new Wrong("player expected");
             Player player = (Player) sender;
-            KitHolder holder = new KitHolder();
+            KitHolder holder = new KitHolder(kit);
             holder.inventory = plugin.getServer().createInventory(holder, 9 * 6, kit.name + " - Editor");
             int i = 0;
             for (KitItem kitItem : kit.items) {

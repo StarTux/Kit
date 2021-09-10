@@ -120,7 +120,7 @@ public final class Kit {
     public void giveToPlayer(Player player) {
         int count = items.size();
         int size = ((count - 1) / 9 + 1) * 9;
-        KitHolder holder = new KitHolder();
+        KitHolder holder = new KitHolder(this);
         holder.inventory = plugin.getServer().createInventory(holder, size, name);
         holder.onClose = () -> {
             for (ItemStack item : holder.inventory.getContents()) {

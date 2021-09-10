@@ -1,5 +1,7 @@
 package com.winthier.kit;
 
+import com.cavetale.core.event.player.PluginPlayerEvent.Detail;
+import com.cavetale.core.event.player.PluginPlayerEvent;
 import com.cavetale.sidebar.PlayerSidebarEvent;
 import com.cavetale.sidebar.Priority;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,9 @@ public final class EventListener implements Listener {
         if (onClose == null) return;
         holder.onClose = null;
         onClose.run();
+        PluginPlayerEvent.Name.KIT_OPEN.ultimate(plugin, player)
+            .detail(Detail.NAME, holder.kit.getName())
+            .call();
     }
 
     @EventHandler
