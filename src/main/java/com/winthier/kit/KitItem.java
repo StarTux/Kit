@@ -41,7 +41,7 @@ public final class KitItem {
                 }
             }
         }
-        return itemStack;
+        return itemStack.clone();
     }
 
     @Override
