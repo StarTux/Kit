@@ -65,9 +65,9 @@ public final class KitItem {
     public String toSingleString() {
         ItemStack theItem = createItemStack().clone();
         theItem.setAmount(1);
-        Mytems mytems = Mytems.forItem(itemStack);
+        Mytems mytems = Mytems.forItem(theItem);
         if (mytems != null) {
-            return mytems.serializeItem(itemStack);
+            return mytems.serializeItem(theItem);
         }
         return material.name().toLowerCase();
     }
