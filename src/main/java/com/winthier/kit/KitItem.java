@@ -1,5 +1,6 @@
 package com.winthier.kit;
 
+import com.cavetale.mytems.Mytems;
 import java.util.Base64;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -10,14 +11,16 @@ import org.bukkit.inventory.ItemStack;
  * (De)serializable with Json.
  */
 public final class KitItem {
-    @Getter Material material = Material.AIR;
-    @Getter int amount = 1;
-    @Getter String tag = null;
-    String serialized = null;
+    @Getter protected Material material = Material.AIR;
+    @Getter protected int amount = 1;
+    @Getter protected String tag = null;
+    protected String serialized = null;
+    private transient ItemStack itemStack; // cache
 
     public KitItem() { }
 
     public KitItem(final ItemStack item) {
+        this.itemStack = item;
         material = item.getType();
         amount = item.getAmount();
         if (!item.isSimilar(new ItemStack(material, amount))) {
@@ -27,19 +30,27 @@ public final class KitItem {
     }
 
     public ItemStack createItemStack() {
-        if (serialized != null) {
-            byte[] bytes = Base64.getDecoder().decode(serialized);
-            return ItemStack.deserializeBytes(bytes);
+        if (itemStack == null) {
+            if (serialized != null) {
+                byte[] bytes = Base64.getDecoder().decode(serialized);
+                itemStack = ItemStack.deserializeBytes(bytes);
+            } else {
+                itemStack = new ItemStack(material, amount);
+                if (tag != null && !tag.isEmpty()) {
+                    itemStack = Bukkit.getServer().getUnsafe().modifyItemStack(itemStack, tag);
+                }
+            }
         }
-        ItemStack item = new ItemStack(material, amount);
-        if (tag != null && !tag.isEmpty()) {
-            item = Bukkit.getServer().getUnsafe().modifyItemStack(item, tag);
-        }
-        return item;
+        return itemStack;
     }
 
     @Override
     public String toString() {
+        createItemStack(); // set itemStack field
+        Mytems mytems = Mytems.forItem(itemStack);
+        if (mytems != null) {
+            return mytems.serializeItem(itemStack);
+        }
         if (material == null) return "INVALID";
         return
             (amount != 1
@@ -49,5 +60,15 @@ public final class KitItem {
             + (tag != null || serialized != null
                ? "{...}"
                : "");
+    }
+
+    public String toSingleString() {
+        ItemStack theItem = createItemStack().clone();
+        theItem.setAmount(1);
+        Mytems mytems = Mytems.forItem(itemStack);
+        if (mytems != null) {
+            return mytems.serializeItem(itemStack);
+        }
+        return material.name().toLowerCase();
     }
 }

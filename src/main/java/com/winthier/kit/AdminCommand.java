@@ -10,6 +10,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -185,22 +188,30 @@ public final class AdminCommand implements CommandExecutor {
 
     void kitInfo(CommandSender sender, Kit kit) {
         info(sender, "name", kit.name);
+        info(sender, "displayName", kit.parseDisplayName());
         info(sender, "hidden", "" + kit.hidden);
         info(sender, "cooldown", "" + kit.cooldown);
         info(sender, "permission", kit.permission);
-        info(sender, "items", kit.items);
+        info(sender, "items", kit.getAllItemStrings());
         info(sender, "commands", kit.commands);
+        info(sender, "friendship", "" + kit.friendship);
         info(sender, "description", kit.description);
         info(sender, "messages", kit.messages);
         info(sender, "members", kit.members.values());
     }
 
-    void info(CommandSender sender, String key, String value) {
-        sender.sendMessage(ChatColor.GRAY + key + ChatColor.RESET + ": " + value);
+    void info(CommandSender sender, String key, Component value) {
+        sender.sendMessage(TextComponent.ofChildren(new Component[] {
+                    Component.text(key + " ", NamedTextColor.GRAY),
+                    value,
+                }));
     }
 
-    void info(CommandSender sender, String key, Collection<? extends Object> list) {
-        sender.sendMessage(ChatColor.GRAY + key + ChatColor.RESET + "(" + list.size() + "): "
-                           + list.stream().map(Object::toString).collect(Collectors.joining(", ")));
+    void info(CommandSender sender, String key, String value) {
+        info(sender, key, Component.text(value));
+    }
+
+    void info(CommandSender sender, String key, Collection<String> list) {
+        info(sender, key, String.join(" ", list));
     }
 }

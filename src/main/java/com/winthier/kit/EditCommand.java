@@ -7,7 +7,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -57,7 +61,7 @@ public final class EditCommand implements TabExecutor {
             if (!(sender instanceof Player)) throw new Wrong("player expected");
             Player player = (Player) sender;
             KitHolder holder = new KitHolder(kit);
-            holder.inventory = plugin.getServer().createInventory(holder, 9 * 6, kit.name + " - Editor");
+            holder.inventory = plugin.getServer().createInventory(holder, 9 * 6, Component.text(kit.name + " - Editor"));
             int i = 0;
             for (KitItem kitItem : kit.items) {
                 int index = i++;
@@ -67,7 +71,7 @@ public final class EditCommand implements TabExecutor {
             holder.onClose = () -> {
                 kit.items.clear();
                 for (ItemStack item : holder.inventory.getContents()) {
-                    if (item == null || item.getAmount() == 0) continue;
+                    if (item == null || item.getType() == Material.AIR) continue;
                     kit.items.add(new KitItem(item));
                 }
                 plugin.saveKit(kit);
@@ -136,6 +140,32 @@ public final class EditCommand implements TabExecutor {
             sender.sendMessage("" + ChatColor.YELLOW + count + " members removed");
             break;
         }
+        case "friendship": {
+            if (args.length != 1) return false;
+            try {
+                kit.friendship = Integer.parseInt(args[0]);
+            } catch (NumberFormatException nfe) {
+                sender.sendMessage(Component.text("Number expected: " + args[0], NamedTextColor.RED));
+                return true;
+            }
+            plugin.saveKit(kit);
+            sender.sendMessage(Component.text("Friendship: " + kit.friendship, NamedTextColor.YELLOW));
+            break;
+        }
+        case "displayname": {
+            if (args.length == 0) return false;
+            String displayName = String.join(" ", args);
+            try {
+                Component component = GsonComponentSerializer.gson().deserialize(displayName);
+                kit.setDisplayName(component);
+            } catch (Exception e) {
+                sender.sendMessage(Component.text("Invalid component: " + displayName, NamedTextColor.RED));
+                return true;
+            }
+            sender.sendMessage(Component.text().content("Display name updated: ").color(NamedTextColor.YELLOW)
+                               .append(kit.parseDisplayName()));
+            break;
+        }
         case "copy": {
             if (args.length != 1) return false;
             String newKitName = args[0];
@@ -199,7 +229,8 @@ public final class EditCommand implements TabExecutor {
         if (args.length == 1) {
             return Stream.of("create", "permission", "items", "info",
                              "cooldown", "hide", "show", "msg", "rmmsg", "cmd",
-                             "rmcmd", "desc", "rmdesc", "member", "rmmember")
+                             "rmcmd", "desc", "rmdesc", "member", "rmmember",
+                             "friendship", "displayname")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
         }

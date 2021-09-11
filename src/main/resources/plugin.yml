@@ -1,17 +1,24 @@
 main: com.winthier.kit.KitPlugin
 name: Kit
-description: Give people kits
-author: StarTux
+
 version: 0.1
 api-version: 1.17
+
+description: Give people kits
+author: StarTux
+
 depend: [Core, PlayerCache, Sidebar, Mytems]
+softdepend: [Fam]
+
 commands:
+
   kit:
     description: Select a kit
     permission: kit.kit
     usage: |-
       /kit - List kits
       /kit <kit> - Claim kit
+
   kitadmin:
     aliases: [kita]
     permission: kit.admin
@@ -23,6 +30,7 @@ commands:
       /kitadmin cooldowns <kit> - List kit cooldowns
       /kitadmin player <name> - List player cooldowns
       /kitadmin set <kit> <player> [seconds] - (Re)set cooldown
+
   kitedit:
     aliases: [kite]
     permission: kit.admin
@@ -43,10 +51,13 @@ commands:
       /kite rmdesc <kit> <index> - Remove description
       /kite member <kit> <name...> - Add member
       /kite rmmember <kit> <name> - Remove member
+
 permissions:
+
   kit.kit:
     default: op
     description: Use the /kit command
+
   kit.admin:
     default: op
     description: Use admin commands

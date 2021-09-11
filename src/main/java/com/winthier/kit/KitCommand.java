@@ -1,14 +1,16 @@
 package com.winthier.kit;
 
+import com.cavetale.core.font.DefaultFont;
 import com.cavetale.mytems.MytemsPlugin;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
@@ -18,7 +20,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 @RequiredArgsConstructor
@@ -38,16 +39,18 @@ public final class KitCommand implements CommandExecutor {
 
     void openKit(Player player, Kit kit) {
         if (!kit.playerCanClaim(player)) {
-            player.sendMessage(ChatColor.RED + "Kit not found: " + kit.getName());
+            player.sendMessage(Component.text("Kit not found: " + kit.getName(), NamedTextColor.RED));
             return;
         }
         if (kit.playerIsOnCooldown(player)) {
             if (kit.hasInfiniteCooldown()) {
-                player.sendMessage(ChatColor.RED + "You already claimed this kit.");
+                player.sendMessage(Component.text("You already claimed this kit.", NamedTextColor.RED));
             } else {
                 long secs = kit.getRemainingCooldown(player);
-                player.sendMessage(ChatColor.RED + "You are on cooldown: "
-                                   + ChatColor.GRAY + formatSeconds(secs));
+                player.sendMessage(TextComponent.ofChildren(new Component[] {
+                            Component.text("You are on cooldown: ", NamedTextColor.RED),
+                            Component.text(formatSeconds(secs), NamedTextColor.GRAY),
+                        }));
             }
             return;
         }
@@ -69,13 +72,13 @@ public final class KitCommand implements CommandExecutor {
             .filter(kit -> !(kit.playerIsOnCooldown(player) && kit.hasInfiniteCooldown()))
             .collect(Collectors.toList());
         if (kits.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "There are no kits available for you.");
+            player.sendMessage(Component.text("There are no kits available for you.", NamedTextColor.RED));
             return;
         }
         int rows = Math.max(3, Math.min(6, (kits.size() - 1) / 9 + 1));
         Gui gui = new Gui(plugin);
-        gui.title("Kits");
         gui.size(rows * 9);
+        gui.title(DefaultFont.guiBlankOverlay(rows * 9, NamedTextColor.GREEN, Component.text("Kits")));
         List<Integer> slots = new ArrayList<>(rows * 9);
         for (int i = 0; i < rows * 9; i += 1) slots.add(i);
         Collections.sort(slots, (a, b) -> Integer.compare(slotDist(a, 4, rows / 2), slotDist(b, 4, rows / 2)));
@@ -114,27 +117,29 @@ public final class KitCommand implements CommandExecutor {
                 ItemStack fixed = MytemsPlugin.getInstance().fixItemStack(original);
                 icon = fixed != null ? fixed : original;
             }
-            ItemMeta meta = icon.getItemMeta();
-            meta.addItemFlags(ItemFlag.values());
-            meta.setDisplayNameComponent(new ComponentBuilder(kit.getName()).italic(false).color(ChatColor.GREEN).create());
-            List<BaseComponent[]> lore = new ArrayList<>();
+            List<Component> lore = new ArrayList<>();
             if (kit.playerIsOnCooldown(player)) {
                 if (kit.hasInfiniteCooldown()) {
-                    lore.add(new ComponentBuilder("You already claimed this kit.").color(ChatColor.RED).create());
+                    lore.add(Component.text("You already claimed this kit.", NamedTextColor.RED));
                 } else {
                     long secs = kit.getRemainingCooldown(player);
-                    lore.add(new ComponentBuilder("Cooldown: ").color(ChatColor.RED).italic(false)
-                             .append(formatSeconds(secs)).color(ChatColor.GRAY).create());
+                    lore.add(TextComponent.ofChildren(new Component[] {
+                                Component.text("Cooldown: ", NamedTextColor.RED),
+                                Component.text(formatSeconds(secs), NamedTextColor.GRAY),
+                            }));
                     result = true;
                 }
             } else {
-                lore.add(new ComponentBuilder("Kit").italic(true).color(ChatColor.GRAY).create());
+                lore.add(Component.text("Kit", NamedTextColor.GRAY));
             }
             for (String line : kit.getDescription()) {
-                lore.add(new ComponentBuilder(fmt(line)).italic(false).color(ChatColor.WHITE).create());
+                lore.add(Component.text(fmt(line), NamedTextColor.WHITE));
             }
-            meta.setLoreComponents(lore);
-            icon.setItemMeta(meta);
+            icon.editMeta(meta -> {
+                    meta.addItemFlags(ItemFlag.values());
+                    meta.displayName(kit.parseDisplayName());
+                    meta.lore(lore);
+                });
             gui.setItem(slot, icon, click -> {
                     if (!click.isLeftClick()) {
                         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 1.0f, 0.5f);

@@ -1,17 +1,29 @@
 package com.winthier.kit;
 
+import com.cavetale.fam.Fam;
 import com.cavetale.mytems.Mytems;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockStateMeta;
 
 /**
  * (De)serializable with Json.
@@ -20,6 +32,7 @@ import org.bukkit.inventory.ItemStack;
 public final class Kit {
     transient KitPlugin plugin;
     transient String name = "";
+    String displayName; // Gson-serialized component
     List<String> messages = new ArrayList<>();
     String permission = "";
     List<KitItem> items = new ArrayList<>();
@@ -28,7 +41,9 @@ public final class Kit {
     List<String> commands = new ArrayList<>();
     Map<UUID, String> members = new HashMap<>();
     List<String> description = new ArrayList<>();
+    int friendship = 0;
     transient Users users = new Users();
+    transient Component displayNameComponent; // cache
 
     public static final class Users {
         Map<UUID, Long> cooldowns = new HashMap<>();
@@ -121,7 +136,7 @@ public final class Kit {
         int count = items.size();
         int size = ((count - 1) / 9 + 1) * 9;
         KitHolder holder = new KitHolder(this);
-        holder.inventory = plugin.getServer().createInventory(holder, size, name);
+        holder.inventory = plugin.getServer().createInventory(holder, size, parseDisplayName());
         holder.onClose = () -> {
             for (ItemStack item : holder.inventory.getContents()) {
                 if (item == null || item.getAmount() == 0) continue;
@@ -139,6 +154,20 @@ public final class Kit {
                 plugin.getLogger().info("Issuing command: " + cmd);
                 plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(),
                                                    cmd);
+            }
+            if (friendship > 0 && members.size() > 1) {
+                Set<UUID> set = new HashSet<>(members.keySet());
+                set.remove(player.getUniqueId());
+                Fam.increaseSingleFriendship(friendship, player.getUniqueId(), set);
+                player.sendMessage(TextComponent.ofChildren(new Component[] {
+                            Component.text("Your friendship with "),
+                            Component.join(Component.text(", ", NamedTextColor.GRAY),
+                                           set.stream()
+                                           .map(members::get)
+                                           .map(theName -> Component.text(theName, NamedTextColor.WHITE))
+                                           .collect(Collectors.toList())),
+                            Component.text(" has grown!"),
+                        }).color(NamedTextColor.GREEN));
             }
             player.playSound(player.getLocation(), Sound.BLOCK_CHEST_CLOSE, SoundCategory.BLOCKS, 1.0f, 1.0f);
         };
@@ -164,7 +193,53 @@ public final class Kit {
             }, 20L);
     }
 
+    public List<KitItem> getAllItems() {
+        List<KitItem> allItems = new ArrayList<>();
+        for (KitItem it : items) {
+            allItems.add(it);
+            if (it.createItemStack().getItemMeta() instanceof BlockStateMeta) {
+                BlockStateMeta blockStateMeta = (BlockStateMeta) it.createItemStack().getItemMeta();
+                if (blockStateMeta.getBlockState() instanceof Container) {
+                    Container container = (Container) blockStateMeta.getBlockState();
+                    for (ItemStack itemStack : container.getInventory()) {
+                        if (itemStack == null || itemStack.getType() == Material.AIR) continue;
+                        allItems.add(new KitItem(itemStack));
+                    }
+                }
+            }
+        }
+        return allItems;
+    }
+
+    public List<String> getAllItemStrings() {
+        Map<String, Integer> map = new LinkedHashMap<>();
+        for (KitItem kitItem : getAllItems()) {
+            map.compute(kitItem.toSingleString(), (k, i) -> (i != null ? i : 0) + kitItem.amount);
+        }
+        List<String> result = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : map.entrySet()) {
+            String itemName = entry.getKey();
+            int amount = entry.getValue();
+            result.add(amount == 1 ? itemName : amount + "x" + itemName);
+        }
+        return result;
+    }
+
     public Kit clone() {
         return Json.deserialize(Json.serialize(this), Kit.class);
+    }
+
+    public void setDisplayName(Component component) {
+        this.displayName = GsonComponentSerializer.gson().serialize(component);
+        this.displayNameComponent = component;
+    }
+
+    public Component parseDisplayName() {
+        if (displayNameComponent == null) {
+            displayNameComponent = displayName != null
+                ? GsonComponentSerializer.gson().deserialize(displayName)
+                : Component.text(name, NamedTextColor.GREEN);
+        }
+        return displayNameComponent;
     }
 }
