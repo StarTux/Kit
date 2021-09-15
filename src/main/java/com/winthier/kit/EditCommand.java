@@ -1,8 +1,10 @@
 package com.winthier.kit;
 
+import com.cavetale.memberlist.MemberList;
 import com.winthier.playercache.PlayerCache;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,13 +53,14 @@ public final class EditCommand implements TabExecutor {
         Kit kit = plugin.getKitNamed(kitName);
         if (kit == null) throw new Wrong("Kit not found: " + kitName);
         switch (cmd) {
-        case "permission":
+        case "permission": {
             if (args.length != 1) return false;
             String arg = args[0];
             kit.permission = arg.equals(".") ? "" : arg;
             sender.sendMessage("Permission updated: " + kit.permission);
             break;
-        case "items":
+        }
+        case "items": {
             if (!(sender instanceof Player)) throw new Wrong("player expected");
             Player player = (Player) sender;
             KitHolder holder = new KitHolder(kit);
@@ -80,6 +83,7 @@ public final class EditCommand implements TabExecutor {
             player.openInventory(holder.inventory);
             // Don't save just yet
             return true;
+        }
         case "cooldown": {
             if (args.length != 1) return false;
             long cd;
@@ -110,15 +114,15 @@ public final class EditCommand implements TabExecutor {
         case "rmdesc": removeStringList(sender, kit.description, args); break;
         case "member": {
             int count = 0;
-            for (String name : args) {
-                UUID uuid = PlayerCache.uuidForName(name);
-                if (uuid == null) throw new Wrong("Player not found: " + name);
-                if (kit.members.containsKey(uuid)) {
-                    sender.sendMessage(ChatColor.RED + "Already added: " + name);
+            for (String arg : args) {
+                PlayerCache player = PlayerCache.forArg(arg);
+                if (player == null) throw new Wrong("Player not found: " + arg);
+                if (kit.members.containsKey(player.uuid)) {
+                    sender.sendMessage(ChatColor.RED + "Already added: " + player.name);
                     continue;
                 }
-                kit.members.put(uuid, name);
-                sender.sendMessage(ChatColor.YELLOW + "Member added: " + name);
+                kit.members.put(player.uuid, player.name);
+                sender.sendMessage(ChatColor.YELLOW + "Member added: " + player.name);
                 count += 1;
             }
             sender.sendMessage("" + ChatColor.YELLOW + count + " members added");
@@ -126,18 +130,35 @@ public final class EditCommand implements TabExecutor {
         }
         case "rmmember": {
             int count = 0;
-            for (String name : args) {
-                UUID uuid = PlayerCache.uuidForName(name);
-                if (uuid == null) throw new Wrong("Player not found: " + name);
-                String oldName = kit.members.remove(uuid);
+            for (String arg : args) {
+                PlayerCache player = PlayerCache.forArg(arg);
+                if (arg == null) throw new Wrong("Player not found: " + arg);
+                String oldName = kit.members.remove(player.uuid);
                 if (oldName == null) {
-                    sender.sendMessage(ChatColor.RED + "Not a member: " + name);
+                    sender.sendMessage(ChatColor.RED + "Not a member: " + player.name);
                     continue;
                 }
                 sender.sendMessage(ChatColor.YELLOW + "Member removed: " + oldName);
                 count += 1;
             }
             sender.sendMessage("" + ChatColor.YELLOW + count + " members removed");
+            break;
+        }
+        case "memberlist": {
+            if (args.length == 0) return false;
+            String listName = String.join(" ", args);
+            int skipped = 0;
+            int added = 0;
+            for (Map.Entry<UUID, String> entry : MemberList.get(listName).entrySet()) {
+                if (kit.members.containsKey(entry.getKey())) {
+                    skipped += 1;
+                } else {
+                    kit.members.put(entry.getKey(), entry.getValue());
+                    added += 1;
+                }
+            }
+            sender.sendMessage(Component.text("Added " + added + ", skipped " + skipped + " members from MemberList " + listName,
+                                              NamedTextColor.YELLOW));
             break;
         }
         case "friendship": {
@@ -228,9 +249,11 @@ public final class EditCommand implements TabExecutor {
         String arg = args[args.length - 1];
         if (args.length == 1) {
             return Stream.of("create", "permission", "items", "info",
-                             "cooldown", "hide", "show", "msg", "rmmsg", "cmd",
-                             "rmcmd", "desc", "rmdesc", "member", "rmmember",
-                             "friendship", "displayname")
+                             "cooldown", "hide", "show", "msg",
+                             "rmmsg", "cmd", "rmcmd", "desc",
+                             "rmdesc", "member", "rmmember",
+                             "memberlist", "friendship",
+                             "displayname")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
         }
