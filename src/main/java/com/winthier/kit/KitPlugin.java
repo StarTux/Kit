@@ -81,11 +81,6 @@ public final class KitPlugin extends JavaPlugin {
                 getLogger().warning("Invalid kit: " + file);
                 continue;
             }
-            for (KitItem kitItem : kit.items) {
-                if (kitItem.tag != null) {
-                    getLogger().warning("" + kit.name + ": Kit item has tag!");
-                }
-            }
             File usersFile = new File(usersFolder, name + ".json");
             try {
                 kit.users = Json.load(usersFile, Kit.Users.class, Kit.Users::new);
@@ -98,6 +93,12 @@ public final class KitPlugin extends JavaPlugin {
             kit.name = name;
             kits.put(name, kit);
             count += 1;
+            // Validity check
+            for (KitItem kitItem : kit.items) {
+                if (kitItem.tag != null) {
+                    getLogger().warning("" + kit.name + ": Kit item has tag!");
+                }
+            }
         }
         getLogger().info(count + " kit(s) loaded");
     }
