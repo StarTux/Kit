@@ -42,6 +42,7 @@ public final class Kit {
     Map<UUID, String> members = new HashMap<>();
     List<String> description = new ArrayList<>();
     int friendship = 0;
+    long date = 0L;
     transient Users users = new Users();
     transient Component displayNameComponent; // cache
 

@@ -15,12 +15,12 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class KitPlugin extends JavaPlugin {
-    final Map<String, Kit> kits = new HashMap<>();
-    final EventListener listener = new EventListener(this);
-    final KitCommand command = new KitCommand(this);
+    protected final Map<String, Kit> kits = new HashMap<>();
+    protected final EventListener listener = new EventListener(this);
+    protected final KitCommand command = new KitCommand(this);
     private File kitsFolder;
     private File usersFolder;
-    final Set<UUID> sidebarList = new HashSet<>();
+    protected final Set<UUID> sidebarList = new HashSet<>();
     protected final AdminCommand adminCommand = new AdminCommand(this);
     protected final EditCommand editCommand = new EditCommand(this);
 
@@ -80,6 +80,11 @@ public final class KitPlugin extends JavaPlugin {
             if (kit == null) {
                 getLogger().warning("Invalid kit: " + file);
                 continue;
+            }
+            for (KitItem kitItem : kit.items) {
+                if (kitItem.tag != null) {
+                    getLogger().warning("" + kit.name + ": Kit item has tag!");
+                }
             }
             File usersFile = new File(usersFolder, name + ".json");
             try {

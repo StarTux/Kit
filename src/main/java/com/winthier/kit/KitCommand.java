@@ -2,8 +2,10 @@ package com.winthier.kit;
 
 import com.cavetale.core.font.DefaultFont;
 import com.cavetale.mytems.MytemsPlugin;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 @RequiredArgsConstructor
 public final class KitCommand implements CommandExecutor {
     final KitPlugin plugin;
+    protected final SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd yyyy");
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         Player player = sender instanceof Player ? (Player) sender : null;
@@ -131,6 +134,11 @@ public final class KitCommand implements CommandExecutor {
                 }
             } else {
                 lore.add(Component.text("Kit", NamedTextColor.GRAY));
+            }
+            if (kit.date != 0) {
+                Date date = new Date(kit.date);
+                String dateText = dateFormat.format(date);
+                lore.add(Component.text(dateText, NamedTextColor.YELLOW));
             }
             for (String line : kit.getDescription()) {
                 lore.add(Component.text(fmt(line), NamedTextColor.WHITE));

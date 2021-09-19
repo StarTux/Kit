@@ -2,7 +2,10 @@ package com.winthier.kit;
 
 import com.cavetale.memberlist.MemberList;
 import com.winthier.playercache.PlayerCache;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,6 +26,7 @@ import org.bukkit.inventory.ItemStack;
 @RequiredArgsConstructor
 public final class EditCommand implements TabExecutor {
     final KitPlugin plugin;
+    protected final SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd");
 
     final class Wrong extends Exception {
         Wrong(final String msg) {
@@ -44,6 +48,7 @@ public final class EditCommand implements TabExecutor {
         if ("create".equals(cmd)) {
             if (plugin.getKitNamed(kitName) != null) throw new Wrong("Kit already exists: " + kitName);
             Kit kit = new Kit(plugin, kitName);
+            kit.date = System.currentTimeMillis();
             kit.hidden = true;
             plugin.kits.put(kitName, kit);
             plugin.saveKit(kit);
@@ -198,6 +203,8 @@ public final class EditCommand implements TabExecutor {
             newKit.name = newKitName;
             newKit.hidden = true;
             newKit.members.clear();
+            newKit.date = System.currentTimeMillis();
+            newKit.description.clear();
             plugin.kits.put(newKitName, newKit);
             plugin.saveKit(newKit);
             sender.sendMessage(ChatColor.YELLOW + "Kit cloned: " + kit.getName() + " => " + newKit.getName());
@@ -207,6 +214,19 @@ public final class EditCommand implements TabExecutor {
             if (args.length != 0) return false;
             plugin.adminCommand.kitInfo(sender, kit);
             return true;
+        }
+        case "date": {
+            Date date;
+            if (args.length != 1) return false;
+            try {
+                date = dateParser.parse(args[0]);
+            } catch (ParseException pe) {
+                throw new Wrong("Invalid date, expected yyyy-mm-dd: " + args[0]);
+            }
+            kit.date = date.getTime();
+            sender.sendMessage(Component.text("Date: " + plugin.command.dateFormat.format(date),
+                                              NamedTextColor.YELLOW));
+            break;
         }
         default: throw new Wrong("Command not found: " + cmd);
         }
@@ -253,7 +273,7 @@ public final class EditCommand implements TabExecutor {
                              "rmmsg", "cmd", "rmcmd", "desc",
                              "rmdesc", "member", "rmmember",
                              "memberlist", "friendship",
-                             "displayname")
+                             "displayname", "date")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
         }
