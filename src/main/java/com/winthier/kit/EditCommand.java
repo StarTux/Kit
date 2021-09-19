@@ -216,8 +216,13 @@ public final class EditCommand implements TabExecutor {
             return true;
         }
         case "date": {
-            Date date;
             if (args.length != 1) return false;
+            if ("0".equals(args[0])) {
+                kit.date = 0L;
+                sender.sendMessage(Component.text("Date reset!", NamedTextColor.YELLOW));
+                break;
+            }
+            Date date;
             try {
                 date = dateParser.parse(args[0]);
             } catch (ParseException pe) {
