@@ -6,7 +6,6 @@ import com.cavetale.sidebar.PlayerSidebarEvent;
 import com.cavetale.sidebar.Priority;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -35,9 +34,8 @@ public final class EventListener implements Listener {
     @EventHandler
     public void onPlayerSidebar(PlayerSidebarEvent event) {
         if (!plugin.sidebarList.contains(event.getPlayer().getUniqueId())) return;
-        event.add(plugin, Priority.HIGH, TextComponent.ofChildren(new Component[] {
-                    Component.text("You have a ", NamedTextColor.AQUA),
-                    Component.text("/kit", NamedTextColor.YELLOW),
-                }));
+        event.add(plugin, Priority.HIGH,
+                  Component.text("You have a ", NamedTextColor.AQUA)
+                  .append(Component.text("/kit", NamedTextColor.YELLOW)));
     }
 }

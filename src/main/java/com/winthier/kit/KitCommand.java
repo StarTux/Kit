@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -50,7 +50,7 @@ public final class KitCommand implements CommandExecutor {
                 player.sendMessage(Component.text("You already claimed this kit.", NamedTextColor.RED));
             } else {
                 long secs = kit.getRemainingCooldown(player);
-                player.sendMessage(TextComponent.ofChildren(new Component[] {
+                player.sendMessage(Component.join(JoinConfiguration.noSeparators(), new Component[] {
                             Component.text("You are on cooldown: ", NamedTextColor.RED),
                             Component.text(formatSeconds(secs), NamedTextColor.GRAY),
                         }));
@@ -126,7 +126,7 @@ public final class KitCommand implements CommandExecutor {
                     lore.add(Component.text("You already claimed this kit.", NamedTextColor.RED));
                 } else {
                     long secs = kit.getRemainingCooldown(player);
-                    lore.add(TextComponent.ofChildren(new Component[] {
+                    lore.add(Component.join(JoinConfiguration.noSeparators(), new Component[] {
                                 Component.text("Cooldown: ", NamedTextColor.RED),
                                 Component.text(formatSeconds(secs), NamedTextColor.GRAY),
                             }));

@@ -14,7 +14,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.Material;
@@ -160,9 +160,9 @@ public final class Kit {
                 Set<UUID> set = new HashSet<>(members.keySet());
                 set.remove(player.getUniqueId());
                 Fam.increaseSingleFriendship(friendship, player.getUniqueId(), set);
-                player.sendMessage(TextComponent.ofChildren(new Component[] {
+                player.sendMessage(Component.join(JoinConfiguration.noSeparators(), new Component[] {
                             Component.text("Your friendship with "),
-                            Component.join(Component.text(", ", NamedTextColor.GRAY),
+                            Component.join(JoinConfiguration.separator(Component.text(", ", NamedTextColor.GRAY)),
                                            set.stream()
                                            .map(members::get)
                                            .map(theName -> Component.text(theName, NamedTextColor.WHITE))

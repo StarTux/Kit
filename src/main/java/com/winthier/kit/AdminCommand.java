@@ -11,7 +11,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -202,7 +202,7 @@ public final class AdminCommand implements CommandExecutor {
     }
 
     void info(CommandSender sender, String key, Component value) {
-        sender.sendMessage(TextComponent.ofChildren(new Component[] {
+        sender.sendMessage(Component.join(JoinConfiguration.noSeparators(), new Component[] {
                     Component.text(key + " ", NamedTextColor.GRAY),
                     value,
                 }));
