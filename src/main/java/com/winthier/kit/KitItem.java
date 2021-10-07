@@ -3,7 +3,6 @@ package com.winthier.kit;
 import com.cavetale.mytems.Mytems;
 import java.util.Base64;
 import lombok.Getter;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
@@ -13,7 +12,6 @@ import org.bukkit.inventory.ItemStack;
 public final class KitItem {
     @Getter protected Material material = Material.AIR;
     @Getter protected int amount = 1;
-    @Getter protected String tag = null;
     protected String serialized = null;
     private transient ItemStack itemStack; // cache
 
@@ -36,9 +34,6 @@ public final class KitItem {
                 itemStack = ItemStack.deserializeBytes(bytes);
             } else {
                 itemStack = new ItemStack(material, amount);
-                if (tag != null && !tag.isEmpty()) {
-                    itemStack = Bukkit.getServer().getUnsafe().modifyItemStack(itemStack, tag);
-                }
             }
         }
         return itemStack.clone();
@@ -57,7 +52,7 @@ public final class KitItem {
              ? "" + amount + "*"
              : "")
             + material.name().toLowerCase()
-            + (tag != null || serialized != null
+            + (serialized != null
                ? "{...}"
                : "");
     }

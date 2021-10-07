@@ -93,20 +93,6 @@ public final class KitPlugin extends JavaPlugin {
             kit.name = name;
             kits.put(name, kit);
             count += 1;
-            // Validity update
-            boolean hasItemTag = false;
-            for (int i = 0; i < kit.items.size(); i += 1) {
-                KitItem kitItem = kit.items.get(i);
-                if (kitItem.tag != null) {
-                    kitItem = new KitItem(kitItem.createItemStack());
-                    kit.items.set(i, kitItem);
-                    hasItemTag = true;
-                }
-            }
-            if (hasItemTag) {
-                getLogger().warning("" + kit.name + ": Kit item has tag! Fixing...");
-                saveKit(kit);
-            }
         }
         getLogger().info(count + " kit(s) loaded");
     }
