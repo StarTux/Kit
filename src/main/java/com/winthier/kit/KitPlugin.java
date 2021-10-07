@@ -93,11 +93,19 @@ public final class KitPlugin extends JavaPlugin {
             kit.name = name;
             kits.put(name, kit);
             count += 1;
-            // Validity check
-            for (KitItem kitItem : kit.items) {
+            // Validity update
+            boolean hasItemTag = false;
+            for (int i = 0; i < kit.items.size(); i += 1) {
+                KitItem kitItem = kit.items.get(i);
                 if (kitItem.tag != null) {
-                    getLogger().warning("" + kit.name + ": Kit item has tag!");
+                    kitItem = new KitItem(kitItem.createItemStack());
+                    kit.items.set(i, kitItem);
+                    hasItemTag = true;
                 }
+            }
+            if (hasItemTag) {
+                getLogger().warning("" + kit.name + ": Kit item has tag! Fixing...");
+                saveKit(kit);
             }
         }
         getLogger().info(count + " kit(s) loaded");
