@@ -197,7 +197,7 @@ public final class AdminCommand implements CommandExecutor {
         info(sender, "friendship", "" + kit.friendship);
         info(sender, "description", kit.description);
         info(sender, "messages", kit.messages);
-        info(sender, "members", kit.members.values());
+        info(sender, "members(" + kit.members.size() + ")", kit.members.values());
         info(sender, "date", (kit.date != 0 ? new Date(kit.date).toString() : "N/A"));
     }
 
