@@ -2,8 +2,11 @@ package com.winthier.kit;
 
 import com.cavetale.memberlist.MemberList;
 import com.winthier.playercache.PlayerCache;
+import com.winthier.title.Title;
+import com.winthier.title.TitlePlugin;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -13,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.ChatColor;
@@ -233,6 +237,28 @@ public final class EditCommand implements TabExecutor {
                                               NamedTextColor.YELLOW));
             break;
         }
+        case "titles": {
+            if (args.length == 0) {
+                kit.titles = List.of();
+                sender.sendMessage(Component.text("Titles reset!", NamedTextColor.YELLOW));
+            } else {
+                List<Component> titles = new ArrayList<>(args.length);
+                for (String arg : args) {
+                    Title title = TitlePlugin.getInstance().getTitle(arg);
+                    if (title == null) {
+                        throw new Wrong("Title not found: " + arg);
+                    }
+                    titles.add(title.getTitleComponent());
+                }
+                kit.titles = List.of(args);
+                sender.sendMessage(Component.join(JoinConfiguration.builder()
+                                                  .prefix(Component.text("Title list updated: ",
+                                                                         NamedTextColor.YELLOW))
+                                                  .separator(Component.space()).build(),
+                                                  titles));
+            }
+            break;
+        }
         default: throw new Wrong("Command not found: " + cmd);
         }
         plugin.saveKit(kit);
@@ -278,13 +304,19 @@ public final class EditCommand implements TabExecutor {
                              "rmmsg", "cmd", "rmcmd", "desc",
                              "rmdesc", "member", "rmmember",
                              "memberlist", "friendship",
-                             "displayname", "date")
+                             "displayname", "date", "titles")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
         }
         if (args.length == 2) {
             return plugin.kits.keySet().stream()
                 .filter(s -> s.contains(arg))
+                .collect(Collectors.toList());
+        }
+        if (args[0].equals("titles")) {
+            return TitlePlugin.getInstance().getTitles().stream()
+                .map(Title::getName)
+                .filter(s -> s.toLowerCase().contains(arg.toLowerCase()))
                 .collect(Collectors.toList());
         }
         return null;

@@ -17,6 +17,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
@@ -30,21 +31,22 @@ import org.bukkit.inventory.meta.BlockStateMeta;
  */
 @Getter
 public final class Kit {
-    transient KitPlugin plugin;
-    transient String name = "";
-    String displayName; // Gson-serialized component
-    List<String> messages = new ArrayList<>();
-    String permission = "";
-    List<KitItem> items = new ArrayList<>();
-    long cooldown = -1;
-    boolean hidden = false;
-    List<String> commands = new ArrayList<>();
-    Map<UUID, String> members = new HashMap<>();
-    List<String> description = new ArrayList<>();
-    int friendship = 0;
-    long date = 0L;
-    transient Users users = new Users();
-    transient Component displayNameComponent; // cache
+    protected transient KitPlugin plugin;
+    protected transient String name = "";
+    protected String displayName; // Gson-serialized component
+    protected List<String> messages = new ArrayList<>();
+    protected String permission = "";
+    protected List<KitItem> items = new ArrayList<>();
+    protected long cooldown = -1;
+    protected boolean hidden = false;
+    protected List<String> commands = new ArrayList<>();
+    protected List<String> titles = List.of();
+    protected Map<UUID, String> members = new HashMap<>();
+    protected List<String> description = new ArrayList<>();
+    protected int friendship = 0;
+    protected long date = 0L;
+    protected transient Users users = new Users();
+    protected transient Component displayNameComponent; // cache
 
     public static final class Users {
         Map<UUID, Long> cooldowns = new HashMap<>();
@@ -153,8 +155,12 @@ public final class Kit {
             for (String cmd : commands) {
                 cmd = cmd.replace("{player}", player.getName());
                 plugin.getLogger().info("Issuing command: " + cmd);
-                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(),
-                                                   cmd);
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+            }
+            if (!titles.isEmpty()) {
+                String cmd = "titles unlockset " + player.getName() + " " + String.join(" ", titles);
+                plugin.getLogger().info("Issuing command: " + cmd);
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
             }
             if (friendship > 0 && members.size() > 1) {
                 Set<UUID> set = new HashSet<>(members.keySet());

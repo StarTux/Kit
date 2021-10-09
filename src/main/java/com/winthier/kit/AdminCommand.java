@@ -1,6 +1,8 @@
 package com.winthier.kit;
 
 import com.winthier.playercache.PlayerCache;
+import com.winthier.title.Title;
+import com.winthier.title.TitlePlugin;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -194,6 +196,14 @@ public final class AdminCommand implements CommandExecutor {
         info(sender, "permission", kit.permission);
         info(sender, "items", kit.getAllItemStrings());
         info(sender, "commands", kit.commands);
+        info(sender, "titles", kit.titles.stream()
+             .map(name -> {
+                     Title title = TitlePlugin.getInstance().getTitle(name);
+                     return title != null
+                         ? title.getTitleComponent()
+                         : Component.text(name, NamedTextColor.DARK_GRAY);
+                 })
+             .collect(Collectors.toList()));
         info(sender, "friendship", "" + kit.friendship);
         info(sender, "description", kit.description);
         info(sender, "messages", kit.messages);
@@ -214,5 +224,13 @@ public final class AdminCommand implements CommandExecutor {
 
     void info(CommandSender sender, String key, Collection<String> list) {
         info(sender, key, String.join(" ", list));
+    }
+
+    void info(CommandSender sender, String key, Iterable<Component> list) {
+        sender.sendMessage(Component.join(JoinConfiguration.builder()
+                                          .prefix(Component.text(key + " ", NamedTextColor.GRAY))
+                                          .separator(Component.space())
+                                          .build(),
+                                          list));
     }
 }

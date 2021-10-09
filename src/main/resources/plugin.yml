@@ -52,6 +52,7 @@ commands:
       /kite member <kit> <name...> - Add member
       /kite rmmember <kit> <name> - Remove member
       /kite date <kit> yyyy-mm-dd - Set date
+      /kite titles <kit> <title> - Set titles
 
 permissions:
 
