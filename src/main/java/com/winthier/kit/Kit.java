@@ -188,7 +188,7 @@ public final class Kit {
             Mytems mytems = Mytems.forItem(itemStack);
             if (mytems != null) {
                 String serialized = mytems.serializeItem(itemStack);
-                itemStack = Mytems.deserializeItem(serialized, player);
+                itemStack = Mytems.deserializeItem(serialized);
             }
             holder.inventory.setItem(index, itemStack);
         }
