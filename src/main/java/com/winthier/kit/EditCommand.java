@@ -208,7 +208,6 @@ public final class EditCommand implements TabExecutor {
             newKit.hidden = true;
             newKit.members.clear();
             newKit.date = System.currentTimeMillis();
-            newKit.description.clear();
             plugin.kits.put(newKitName, newKit);
             plugin.saveKit(newKit);
             sender.sendMessage(ChatColor.YELLOW + "Kit cloned: " + kit.getName() + " => " + newKit.getName());
