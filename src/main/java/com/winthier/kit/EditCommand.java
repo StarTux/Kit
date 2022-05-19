@@ -4,20 +4,25 @@ import com.cavetale.memberlist.MemberList;
 import com.winthier.playercache.PlayerCache;
 import com.winthier.title.Title;
 import com.winthier.title.TitlePlugin;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -26,6 +31,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 @RequiredArgsConstructor
 public final class EditCommand implements TabExecutor {
@@ -73,7 +80,7 @@ public final class EditCommand implements TabExecutor {
             if (!(sender instanceof Player)) throw new Wrong("player expected");
             Player player = (Player) sender;
             KitHolder holder = new KitHolder(kit);
-            holder.inventory = plugin.getServer().createInventory(holder, 9 * 6, Component.text(kit.name + " - Editor"));
+            holder.inventory = plugin.getServer().createInventory(holder, 9 * 6, text(kit.name + " - Editor"));
             int i = 0;
             for (KitItem kitItem : kit.items) {
                 int index = i++;
@@ -166,20 +173,21 @@ public final class EditCommand implements TabExecutor {
                     added += 1;
                 }
             }
-            sender.sendMessage(Component.text("Added " + added + ", skipped " + skipped + " members from MemberList " + listName,
-                                              NamedTextColor.YELLOW));
+            sender.sendMessage(text("Added " + added + ", skipped " + skipped + " members from MemberList " + listName,
+                                    YELLOW));
             break;
         }
+        case "fromfile": return fromFile(sender, kitName, args);
         case "friendship": {
             if (args.length != 1) return false;
             try {
                 kit.friendship = Integer.parseInt(args[0]);
             } catch (NumberFormatException nfe) {
-                sender.sendMessage(Component.text("Number expected: " + args[0], NamedTextColor.RED));
+                sender.sendMessage(text("Number expected: " + args[0], RED));
                 return true;
             }
             plugin.saveKit(kit);
-            sender.sendMessage(Component.text("Friendship: " + kit.friendship, NamedTextColor.YELLOW));
+            sender.sendMessage(text("Friendship: " + kit.friendship, YELLOW));
             break;
         }
         case "displayname": {
@@ -189,10 +197,10 @@ public final class EditCommand implements TabExecutor {
                 Component component = GsonComponentSerializer.gson().deserialize(displayName);
                 kit.setDisplayName(component);
             } catch (Exception e) {
-                sender.sendMessage(Component.text("Invalid component: " + displayName, NamedTextColor.RED));
+                sender.sendMessage(text("Invalid component: " + displayName, RED));
                 return true;
             }
-            sender.sendMessage(Component.text().content("Display name updated: ").color(NamedTextColor.YELLOW)
+            sender.sendMessage(text().content("Display name updated: ").color(YELLOW)
                                .append(kit.parseDisplayName()));
             break;
         }
@@ -222,7 +230,7 @@ public final class EditCommand implements TabExecutor {
             if (args.length != 1) return false;
             if ("0".equals(args[0])) {
                 kit.date = 0L;
-                sender.sendMessage(Component.text("Date reset!", NamedTextColor.YELLOW));
+                sender.sendMessage(text("Date reset!", YELLOW));
                 break;
             }
             Date date;
@@ -232,14 +240,14 @@ public final class EditCommand implements TabExecutor {
                 throw new Wrong("Invalid date, expected yyyy-mm-dd: " + args[0]);
             }
             kit.date = date.getTime();
-            sender.sendMessage(Component.text("Date: " + plugin.command.dateFormat.format(date),
-                                              NamedTextColor.YELLOW));
+            sender.sendMessage(text("Date: " + plugin.command.dateFormat.format(date),
+                                    YELLOW));
             break;
         }
         case "titles": {
             if (args.length == 0) {
                 kit.titles = List.of();
-                sender.sendMessage(Component.text("Titles reset!", NamedTextColor.YELLOW));
+                sender.sendMessage(text("Titles reset!", YELLOW));
             } else {
                 List<Component> titles = new ArrayList<>(args.length);
                 for (String arg : args) {
@@ -251,8 +259,8 @@ public final class EditCommand implements TabExecutor {
                 }
                 kit.titles = List.of(args);
                 sender.sendMessage(Component.join(JoinConfiguration.builder()
-                                                  .prefix(Component.text("Title list updated: ",
-                                                                         NamedTextColor.YELLOW))
+                                                  .prefix(text("Title list updated: ",
+                                                               YELLOW))
                                                   .separator(Component.space()).build(),
                                                   titles));
             }
@@ -302,7 +310,8 @@ public final class EditCommand implements TabExecutor {
                              "cooldown", "hide", "show", "msg",
                              "rmmsg", "cmd", "rmcmd", "desc",
                              "rmdesc", "member", "rmmember",
-                             "memberlist", "friendship",
+                             "memberlist", "fromfile",
+                             "friendship",
                              "displayname", "date", "titles")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
@@ -319,5 +328,42 @@ public final class EditCommand implements TabExecutor {
                 .collect(Collectors.toList());
         }
         return null;
+    }
+
+    private boolean fromFile(CommandSender sender, String kitName, String[] args) throws Wrong {
+        if (args.length != 1) return false;
+        Kit kit = plugin.getKitNamed(kitName);
+        if (kit == null) throw new Wrong("Kit not found: " + kitName);
+        Path path = Paths.get(args[0]);
+        if (!Files.isReadable(path)) {
+            throw new Wrong("Path not found: " + path);
+        }
+        List<String> lines;
+        try {
+            lines = Files.lines(path).toList();
+        } catch (IOException ioe) {
+            throw new Wrong("Error reading: " + ioe.getMessage());
+        }
+        Set<PlayerCache> targets = new HashSet<>();
+        for (String line : lines) {
+            line = line.strip();
+            if (line.isEmpty()) continue;
+            targets.add(PlayerCache.require(line));
+        }
+        if (targets.isEmpty()) {
+            throw new Wrong("File is empty!");
+        }
+        int skipped = 0;
+        int added = 0;
+        for (PlayerCache target : targets) {
+            if (kit.members.containsKey(target.uuid)) {
+                skipped += 1;
+            } else {
+                kit.members.put(target.uuid, target.name);
+                added += 1;
+            }
+        }
+        sender.sendMessage(text("Added " + added + ", skipped " + skipped + " members from file " + path, YELLOW));
+        return true;
     }
 }
