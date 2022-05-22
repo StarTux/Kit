@@ -26,9 +26,9 @@ public final class EventListener implements Listener {
         if (onClose == null) return;
         holder.onClose = null;
         onClose.run();
-        PluginPlayerEvent.Name.KIT_OPEN.ultimate(plugin, player)
+        PluginPlayerEvent.Name.KIT_OPEN.make(plugin, player)
             .detail(Detail.NAME, holder.kit.getName())
-            .call();
+            .callEvent();
     }
 
     @EventHandler
