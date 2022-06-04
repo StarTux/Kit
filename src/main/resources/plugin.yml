@@ -7,7 +7,7 @@ api-version: 1.18
 description: Give people kits
 author: StarTux
 
-depend: [Core, PlayerCache, Sidebar, Mytems, MemberList, Title]
+depend: [Core, SQL, PlayerCache, Sidebar, Mytems, MemberList, Title, Inventory]
 softdepend: [Fam]
 
 commands:
@@ -15,44 +15,13 @@ commands:
   kit:
     description: Select a kit
     permission: kit.kit
-    usage: |-
-      /kit - List kits
-      /kit <kit> - Claim kit
+    usage: /kit
 
   kitadmin:
-    aliases: [kita]
+    aliases: [kita, kite]
     permission: kit.admin
     description: Admin interface
-    usage: |-
-      /kitadmin list - List kits
-      /kitadmin reload - Reload
-      /kitadmin give <player> <kit> - Give to player
-      /kitadmin cooldowns <kit> - List kit cooldowns
-      /kitadmin player <name> - List player cooldowns
-      /kitadmin set <kit> <player> [seconds] - (Re)set cooldown
-
-  kitedit:
-    aliases: [kite]
-    permission: kit.admin
-    description: Created and edit kits
-    usage: |-
-      /kite create <name> - Make new kit (hidden)
-      /kite permission <kit> <permission> - Set permission (. clears)
-      /kite items <kit> - Edit items
-      /kite cooldown <kit> <seconds> - Set cooldown (-1 means infinite)
-      /kite hide <kit> - Hide kit
-      /kite show <kit> - Make kit public
-      /kite msg <kit> <message> - Add message
-      /kite rmmsg <kit> <index> - Remove message
-      /kite cmd <kit> <command> - Add command
-        Placeholder: {player}
-      /kite rmcmd <kit> <index> - Remove command
-      /kite desc <kit> <description> - Add description
-      /kite rmdesc <kit> <index> - Remove description
-      /kite member <kit> <name...> - Add member
-      /kite rmmember <kit> <name> - Remove member
-      /kite date <kit> yyyy-mm-dd - Set date
-      /kite titles <kit> <title> - Set titles
+    usage: /kitadmin
 
 permissions:
 

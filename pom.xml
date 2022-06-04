@@ -29,6 +29,14 @@
   </repositories>
   <dependencies>
 
+    <!-- JUnit -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.1</version>
+      <scope>test</scope>
+    </dependency>
+
     <!-- Paper API -->
     <dependency>
       <groupId>io.papermc.paper</groupId>
@@ -53,18 +61,18 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- PlayerCache -->
+    <!-- SQL -->
     <dependency>
-      <groupId>com.winthier.playercache</groupId>
-      <artifactId>playercache</artifactId>
+      <groupId>com.winthier.sql</groupId>
+      <artifactId>sql</artifactId>
       <version>0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
 
-    <!-- SQL, cannot access rows from Title without -->
+    <!-- PlayerCache -->
     <dependency>
-      <groupId>com.winthier.sql</groupId>
-      <artifactId>sql</artifactId>
+      <groupId>com.winthier.playercache</groupId>
+      <artifactId>playercache</artifactId>
       <version>0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
@@ -89,6 +97,14 @@
     <dependency>
       <groupId>com.cavetale.mytems</groupId>
       <artifactId>mytems</artifactId>
+      <version>0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Inventory -->
+    <dependency>
+      <groupId>com.cavetale.inventory</groupId>
+      <artifactId>inventory</artifactId>
       <version>0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
