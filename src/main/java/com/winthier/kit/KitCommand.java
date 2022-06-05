@@ -135,7 +135,10 @@ public final class KitCommand extends AbstractCommand<KitPlugin> {
     private void clickKit(Player player, Kit kit, InventoryClickEvent click) {
         if (!click.isLeftClick()) return;
         plugin.lockKitAsync(kit.row(), player.getUniqueId(), locked -> {
-                if (locked) openKit(player, kit);
+                if (locked) {
+                    plugin.updateSidebarList();
+                    openKit(player, kit);
+                }
             });
     }
 
@@ -174,9 +177,8 @@ public final class KitCommand extends AbstractCommand<KitPlugin> {
                 }
                 if (kit.row().getFriendship() > 0) {
                     plugin.database.find(SQLMember.class)
-                        .select("member")
                         .eq("kitId", kit.row().getId())
-                        .findValuesAsync(UUID.class, list -> {
+                        .findValuesAsync("member", UUID.class, list -> {
                                 Set<UUID> uuids = new HashSet<>(list);
                                 uuids.remove(player.getUniqueId());
                                 if (uuids.isEmpty()) return;

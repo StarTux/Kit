@@ -3,9 +3,14 @@ package com.winthier.kit;
 import com.cavetale.core.command.AbstractCommand;
 import com.cavetale.core.command.CommandArgCompleter;
 import com.cavetale.core.command.CommandWarn;
+import com.cavetale.core.editor.EditMenuDelegate;
+import com.cavetale.core.editor.EditMenuNode;
+import com.cavetale.core.editor.Editor;
+import com.cavetale.core.font.VanillaItems;
 import com.cavetale.core.util.Json;
 import com.cavetale.inventory.storage.InventoryStorage;
 import com.cavetale.memberlist.MemberList;
+import com.cavetale.mytems.Mytems;
 import com.winthier.kit.legacy.LegacyKit;
 import com.winthier.kit.legacy.LegacyKitItem;
 import com.winthier.kit.legacy.LegacyUsers;
@@ -14,11 +19,14 @@ import com.winthier.kit.sql.SQLCooldown;
 import com.winthier.kit.sql.SQLKit;
 import com.winthier.kit.sql.SQLMember;
 import com.winthier.playercache.PlayerCache;
+import com.winthier.title.Title;
+import com.winthier.title.TitlePlugin;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,35 +38,87 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.block.Container;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockStateMeta;
+import static com.cavetale.core.font.Unicode.tiny;
+import static net.kyori.adventure.text.Component.join;
+import static net.kyori.adventure.text.Component.newline;
+import static net.kyori.adventure.text.Component.space;
 import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.JoinConfiguration.noSeparators;
+import static net.kyori.adventure.text.JoinConfiguration.separator;
+import static net.kyori.adventure.text.event.HoverEvent.showText;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
+import static net.kyori.adventure.text.format.TextDecoration.*;
+import static net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText;
 
 public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+
     protected KitAdminCommand(final KitPlugin plugin) {
         super(plugin, "kitadmin");
     }
 
     @Override
     protected void onEnable() {
+        rootNode.addChild("info").arguments("<kit>")
+            .description("Print kit info")
+            .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames))
+            .senderCaller(this::info);
+        rootNode.addChild("create").arguments("<name>")
+            .description("Create kit")
+            .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames))
+            .senderCaller(this::create);
         rootNode.addChild("copy").arguments("<kit> <name>")
             .description("Clone a kit")
             .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames),
                         CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames))
             .senderCaller(this::copy);
-        rootNode.addChild("check").denyTabCompletion()
-            .description("Run a sidebar check")
-            .senderCaller(this::check);
+        rootNode.addChild("edit").arguments("<kit> [what]")
+            .description("Open kit editor")
+            .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames),
+                        CommandArgCompleter.list(List.of("tag", "items")))
+            .playerCaller(this::edit);
+        rootNode.addChild("member").arguments("<kit> <players...>")
+            .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames),
+                        PlayerCache.NAME_COMPLETER,
+                        CommandArgCompleter.REPEAT)
+            .senderCaller(this::member);
+        rootNode.addChild("memberlist").arguments("<kit> <list>")
+            .description("Add members from MemberList")
+            .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames),
+                        CommandArgCompleter.NULL)
+            .senderCaller(this::memberList);
+        rootNode.addChild("fromfile").arguments("<kit> <path>")
+            .description("Add members from file with names or UUIDs")
+            .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames),
+                        CommandArgCompleter.NULL)
+            .senderCaller(this::fromFile);
+        rootNode.addChild("delete").arguments("<kit>")
+            .description("Delete a kit")
+            .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames))
+            .senderCaller(this::delete);
         rootNode.addChild("migrate").denyTabCompletion()
             .description("Import legacy files")
             .senderCaller(this::migrate);
     }
 
     private List<String> getKitNames() {
-        return plugin.database.find(SQLKit.class).select("name").findValues(String.class);
+        return plugin.database.find(SQLKit.class).findValues("name", String.class);
+    }
+
+    private String findKitName(String name) {
+        List<String> values = plugin.database.find(SQLKit.class)
+            .eq("name", name)
+            .findValues("name", String.class);
+        return !values.isEmpty() ? values.get(0) : null;
     }
 
     private SQLKit findKit(String name) {
@@ -71,13 +131,150 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
         return kit;
     }
 
+    private boolean info(CommandSender sender, String[] args) {
+        if (args.length != 1) return false;
+        SQLKit kit = requireKit(args[0]);
+        sender.sendMessage(join(separator(newline()), getKitInfo(kit)));
+        SQLKit.Tag tag = kit.parseTag();
+        if (tag.getCommands() != null) {
+            for (String command : tag.getCommands()) {
+                sender.sendMessage(info("command", command));
+            }
+        }
+        if (tag.getTitles() != null) {
+            List<Component> names = new ArrayList<>();
+            for (String titleName : tag.getTitles()) {
+                Title title = TitlePlugin.getInstance().getTitle(titleName);
+                names.add(title != null
+                          ? title.getTitleComponent()
+                          : text(titleName, DARK_GRAY, ITALIC));
+            }
+            sender.sendMessage(info("titles", names));
+        }
+        if (kit.getInventory() != null) {
+            Inventory inventory = kit.parseInventory();
+            Map<String, Integer> counts = new HashMap<>();
+            Map<String, Component> displayNames = new HashMap<>();
+            itemsHelper(inventory, counts, displayNames);
+            List<String> allNames = new ArrayList<>(counts.keySet());
+            allNames.sort(String.CASE_INSENSITIVE_ORDER);
+            List<Component> items = new ArrayList<>();
+            for (String name : allNames) {
+                int count = counts.get(name);
+                Component displayName = displayNames.get(name);
+                items.add(count != 1
+                          ? join(noSeparators(), text(count, YELLOW), text("\u00D7", GRAY), displayName)
+                          : displayName);
+            }
+            sender.sendMessage(info("items", items));
+        }
+        if (kit.getType() == KitType.MEMBER) {
+            Map<String, Component> displayNames = new HashMap<>();
+            for (SQLMember row : plugin.database.find(SQLMember.class).eq("kitId", kit.getId()).findList()) {
+                String name = PlayerCache.nameForUuid(row.getMember());
+                displayNames.put(name, text(name, row.isClaimed() ? GRAY : GREEN)
+                                 .hoverEvent(showText(join(separator(newline()),
+                                                           text(name, row.isClaimed() ? GRAY : GREEN),
+                                                           text(row.getMember().toString(), GRAY),
+                                                           info("enabled", row.isEnabled()),
+                                                           info("created", row.getCreatedTime()),
+                                                           info("claimed", row.isClaimed()),
+                                                           info("claimed time", row.getClaimedTime()))))
+                                 .insertion(name));
+            }
+            List<String> names = new ArrayList<>(displayNames.keySet());
+            names.sort(String.CASE_INSENSITIVE_ORDER);
+            List<Component> components = new ArrayList<>(names.size());
+            names.forEach(n -> components.add(displayNames.get(n)));
+                                                   sender.sendMessage(info("members", components));
+        }
+        return true;
+    }
+
+    public static List<Component> getKitInfo(SQLKit kit) {
+        return List.of(info("name", join(separator(space()), text(kit.getName()), text("#" + kit.getId(), YELLOW))),
+                       info("type", kit.getType().name()),
+                       info("display name", (kit.getDisplayName() != null
+                                             ? kit.parseDisplayComponent().insertion(kit.getDisplayName())
+                                             : null)),
+                       info("description", kit.getDescription()),
+                       info("permission", kit.getPermission()),
+                       info("enabled", kit.isEnabled()),
+                       info("friendship", "" + kit.getFriendship()),
+                       info("cooldown", "" + kit.getCooldown()),
+                       info("created", kit.getCreatedTime()));
+    }
+
+    private static Component info(String key, Component value) {
+        return join(separator(space()), text(tiny(key), GRAY), (value != null
+                                                                ? value
+                                                                : text(tiny("null"), DARK_GRAY, ITALIC)));
+    }
+
+    private static Component info(String key, boolean value) {
+        return info(key, join(noSeparators(), value ? text(tiny("true"), GREEN) : text(tiny("false"), RED)));
+    }
+
+    private static Component info(String key, String value) {
+        return info(key, value != null ? text(value) : text(tiny("null"), DARK_GRAY, ITALIC));
+    }
+
+    private static Component info(String key, Date date) {
+        return info(key, (date != null
+                          ? text(DATE_FORMAT.format(date))
+                          : text(tiny("null"), DARK_GRAY, ITALIC)));
+    }
+
+    private static Component info(String key, List<Component> list) {
+        return info(key + "(" + list.size() + ")", join(separator(space()), list));
+    }
+
+    private void itemsHelper(Inventory inventory, Map<String, Integer> counts, Map<String, Component> displayNames) {
+        for (ItemStack item : inventory) {
+            if (item == null || item.getType().isAir()) continue;
+            final String name;
+            final Component displayName;
+            Mytems mytems = Mytems.forItem(item);
+            if (mytems != null) {
+                displayName = join(noSeparators(), mytems.component, mytems.getMytem().getDisplayName());
+                name = plainText().serialize(mytems.getMytem().getDisplayName());
+            } else {
+                name = item.getI18NDisplayName();
+                displayName = join(noSeparators(), VanillaItems.componentOf(item.getType()), text(name));
+            }
+            counts.put(name, counts.getOrDefault(name, 0) + item.getAmount());
+            displayNames.put(name, displayName.hoverEvent(item.asHoverEvent()));
+            if (item.getItemMeta() instanceof BlockStateMeta meta
+                && meta.hasBlockState()
+                && meta.getBlockState() instanceof Container container) {
+                itemsHelper(container.getInventory(), counts, displayNames);
+            }
+        }
+    }
+
+    private boolean create(CommandSender sender, String[] args) {
+        if (args.length != 1) return false;
+        String newKitName = args[0];
+        String conflictingKitName = findKitName(newKitName);
+        if (conflictingKitName != null) {
+            throw new CommandWarn("Kit already exists: " + conflictingKitName);
+        }
+        SQLKit kit = new SQLKit(newKitName, KitType.MEMBER);
+        if (plugin.database.insert(kit) == 0) {
+            throw new CommandWarn("Could not create kit: " + newKitName);
+        }
+        sender.sendMessage(text("Kit created: " + newKitName, AQUA));
+        return true;
+    }
+
     private boolean copy(CommandSender sender, String[] args) {
         if (args.length != 2) return false;
         String oldKitName = args[0];
         String newKitName = args[1];
         SQLKit kit = requireKit(oldKitName);
-        if (findKit(newKitName) != null) {
-            throw new CommandWarn("Kit already exists: " + newKitName);
+        String conflictingKitName = findKitName(newKitName);
+        if (conflictingKitName != null) {
+            throw new CommandWarn("Kit already exists: " + conflictingKitName);
         }
         kit.setId(null);
         kit.setName(newKitName);
@@ -87,6 +284,101 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
             throw new CommandWarn("Could not clone kit: " + oldKitName + " => " + newKitName);
         }
         sender.sendMessage(text("Kit cloned: " + oldKitName + " => " + newKitName, AQUA));
+        return true;
+    }
+
+    private boolean edit(Player player, String[] args) {
+        if (args.length != 1 && args.length != 2) return false;
+        SQLKit kit = requireKit(args[0]);
+        if (args.length == 1) {
+            Editor.get().open(plugin, player, kit, new EditMenuDelegate() {
+                    @Override public Runnable getSaveFunction(EditMenuNode node) {
+                        return () -> {
+                            plugin.database.updateAsync(kit, res -> {
+                                    player.sendMessage(join(noSeparators(),
+                                                            text("Kit #" + kit.getId() + " saved: ", AQUA),
+                                                            text(res + ": ", YELLOW),
+                                                            kit.parseDisplayComponent()));
+                                });
+                            if (kit.getType() == KitType.MEMBER) {
+                                plugin.database.update(SQLMember.class)
+                                    .where(c -> c
+                                           .eq("kitId", kit.getId())
+                                           .eq("enabled", !kit.isEnabled()))
+                                    .set("enabled", kit.isEnabled())
+                                    .async(res -> {
+                                            if (res == 0) return;
+                                            plugin.updateSidebarList();
+                                            player.sendMessage(text(res + " members updated", AQUA));
+                                        });
+                            }
+                        };
+                    }
+                });
+            return true;
+        }
+        switch (args[1]) {
+        case "tag": {
+            SQLKit.Tag tag = kit.parseTag();
+            Editor.get().open(plugin, player, tag, new EditMenuDelegate() {
+                    @Override public Runnable getSaveFunction(EditMenuNode node) {
+                        return () -> {
+                            kit.setTag(!tag.isEmpty()
+                                       ? Json.serialize(tag)
+                                       : null);
+                            plugin.database.updateAsync(kit, Set.of("tag"), res -> {
+                                    player.sendMessage(join(noSeparators(),
+                                                            text("Kit Tag #" + kit.getId() + " saved: ", AQUA),
+                                                            text(res + ": ", YELLOW),
+                                                            kit.parseDisplayComponent()));
+                                });
+                        };
+                    };
+                });
+            return true;
+        }
+        case "items": {
+            InventoryStorage storage = kit.parseInventoryStorage();
+            Gui gui = new Gui(plugin)
+                .size(storage.isEmpty() ? storage.getSize() : 3 * 9)
+                .title(kit.parseDisplayComponent());
+            if (!storage.isEmpty()) storage.restore(gui.getInventory(), "kita.edit");
+            gui.onClose(evt -> {
+                    InventoryStorage storage2 = InventoryStorage.of(gui.getInventory());
+                    kit.setInventory(!storage2.isEmpty()
+                                     ? Json.serialize(storage2)
+                                     : null);
+                    plugin.database.updateAsync(kit, Set.of("inventory"), res -> {
+                            player.sendMessage(join(noSeparators(),
+                                                    text("Kit Items #" + kit.getId() + " saved: ", AQUA),
+                                                    text(res + ": ", YELLOW),
+                                                    kit.parseDisplayComponent()));
+                        });
+                });
+            gui.setEditable(true);
+            gui.open(player);
+            return true;
+        }
+        default: return false;
+        }
+    }
+
+    private boolean member(CommandSender sender, String[] args) {
+        if (args.length < 2) return false;
+        String kitName = args[0];
+        List<String> names = List.of(Arrays.copyOfRange(args, 1, args.length));
+        SQLKit kit = requireKit(kitName);
+        if (kit.getType() != KitType.MEMBER) {
+            throw new CommandWarn("Not a member kit!");
+        }
+        List<SQLMember> newRows = new ArrayList<>();
+        for (String name : names) {
+            PlayerCache target = PlayerCache.require(name);
+            newRows.add(new SQLMember(kit, target.uuid));
+        }
+        final int added = plugin.database.insertIgnore(newRows);
+        final int skipped = newRows.size() - added;
+        sender.sendMessage(text("Added " + added + ", skipped " + skipped + " members", AQUA));
         return true;
     }
 
@@ -123,7 +415,7 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
         }
         final int added = plugin.database.insertIgnore(newRows);
         final int skipped = newRows.size() - added;
-        sender.sendMessage(text("Added " + added + ", skipped " + skipped + " members from file " + path, YELLOW));
+        sender.sendMessage(text("Added " + added + ", skipped " + skipped + " members from file " + path, AQUA));
         return true;
     }
 
@@ -141,14 +433,25 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
         }
         final int added = plugin.database.insertIgnore(newRows);
         final int skipped = newRows.size() - added;
-        sender.sendMessage(text("Added " + added + ", skipped " + skipped + " members from MemberList " + listName,
-                                YELLOW));
+        sender.sendMessage(text("Added " + added + ", skipped " + skipped
+                                + " members from MemberList " + listName, AQUA));
         return true;
     }
 
-    private void check(CommandSender sender) {
+    private boolean delete(CommandSender sender, String[] args) {
+        if (args.length != 1) return false;
+        SQLKit kit = requireKit(args[0]);
+        plugin.database.delete(kit);
+        int rowCount = 0;
+        rowCount += plugin.database.find(SQLMember.class).eq("kitId", kit.getId()).delete();
+        rowCount += plugin.database.find(SQLCooldown.class).eq("kitId", kit.getId()).delete();
+        rowCount += plugin.database.find(SQLClaimed.class).eq("kitId", kit.getId()).delete();
         plugin.updateSidebarList();
-        sender.sendMessage(text("Sidebar list updated", AQUA));
+        sender.sendMessage(join(noSeparators(),
+                                text("Deleted kit #" + kit.getId() + ": ", AQUA),
+                                kit.parseDisplayComponent(),
+                                text(", member rows=" + rowCount, AQUA)));
+        return true;
     }
 
     private void migrate(CommandSender sender) {
@@ -170,7 +473,12 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
                 throw new CommandWarn("Invalid file: " + kitFile);
             }
             String name = kitFile.getName();
-            legacyKit.setName(name.substring(0, name.length() - 5));
+            name = name.substring(0, name.length() - 5);
+            String conflictingKitName = findKitName(name);
+            if (conflictingKitName != null) {
+                throw new CommandWarn("Kit already exists: " + name + "/" + conflictingKitName);
+            }
+            legacyKit.setName(name);
             legacyKits.add(legacyKit);
         }
         Map<String, LegacyUsers> legacyUsersMap = new HashMap<>();

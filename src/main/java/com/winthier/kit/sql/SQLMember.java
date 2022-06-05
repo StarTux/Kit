@@ -35,5 +35,6 @@ public final class SQLMember implements SQLRow {
         this.kitId = kit.getId();
         this.member = member;
         this.createdTime = new Date();
+        this.enabled = kit.isEnabled();
     }
 }

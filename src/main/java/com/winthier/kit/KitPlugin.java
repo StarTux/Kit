@@ -54,11 +54,10 @@ public final class KitPlugin extends JavaPlugin {
 
     public List<Kit> findAvailableKits(UUID uuid) {
         final List<Integer> unclaimed = database.find(SQLMember.class)
-            .select("kitId")
             .eq("enabled", true)
             .eq("claimed", false)
             .eq("member", uuid)
-            .findValues(Integer.class);
+            .findValues("kitId", Integer.class);
         Map<Integer, Date> cooldowns = new HashMap<>();
         for (SQLCooldown row : database.find(SQLCooldown.class)
                  .select("kitId", "expiryTime")
@@ -67,9 +66,8 @@ public final class KitPlugin extends JavaPlugin {
             cooldowns.put(row.getKitId(), row.getExpiryTime());
         }
         List<Integer> claimed = database.find(SQLClaimed.class)
-            .select("kitId")
             .eq("member", uuid)
-            .findValues(Integer.class);
+            .findValues("kitId", Integer.class);
         List<Kit> result = new ArrayList<>();
         for (SQLKit row : database.find(SQLKit.class)
                  .eq("enabled", true)
@@ -103,6 +101,7 @@ public final class KitPlugin extends JavaPlugin {
     }
 
     public boolean lockKit(SQLKit row, UUID uuid) {
+        Date now = new Date();
         return switch (row.getType()) {
         case MEMBER -> database.update(SQLMember.class)
             .where(c -> c
@@ -111,10 +110,10 @@ public final class KitPlugin extends JavaPlugin {
                    .eq("enabled", true)
                    .eq("claimed", false))
             .set("claimed", true)
+            .set("claimedTime", now)
             .sync() != 0;
         case PERMISSION -> database.insertIgnore(new SQLClaimed(row, uuid)) != 0;
         case PERMISSION_COOLDOWN -> {
-            Date now = new Date();
             Date expiry = Date.from(Instant.now().plusSeconds(row.getCooldown()));
             yield database.update(SQLCooldown.class)
                 .where(c -> c
@@ -150,11 +149,10 @@ public final class KitPlugin extends JavaPlugin {
 
     protected void updateSidebarListNow(Set<UUID> uuids) {
         final Set<UUID> unclaimedMembers = Set.copyOf(database.find(SQLMember.class)
-                                                      .select("member")
                                                       .eq("enabled", true)
                                                       .eq("claimed", false)
                                                       .in("member", uuids)
-                                                      .findValues(UUID.class));
+                                                      .findValues("member", UUID.class));
         Date now = new Date();
         Map<Integer, Set<UUID>> lockedKitMap = new TreeMap<>();
         for (SQLCooldown row : database.find(SQLCooldown.class)
