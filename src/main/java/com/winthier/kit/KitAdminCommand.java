@@ -557,19 +557,20 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
                         member.setClaimed(true);
                         member.setClaimedTime(now);
                     }
+                    member.setCreatedTime(kit.getCreatedTime());
                     member.setEnabled(kit.isEnabled());
                     newMembers.add(member);
                 }
             } else if (type == KitType.PERMISSION) {
                 legacyUsers.getCooldowns().forEach((UUID uuid, Long time) -> {
                         SQLClaimed claimed = new SQLClaimed(kit, uuid);
-                        claimed.setClaimedTime(now);
+                        claimed.setClaimedTime(kit.getCreatedTime());
                         newClaimeds.add(claimed);
                     });
             } else if (type == KitType.PERMISSION_COOLDOWN) {
                 legacyUsers.getCooldowns().forEach((UUID uuid, Long epochSecond) -> {
                         SQLCooldown cooldown = new SQLCooldown(kit, uuid, Date.from(Instant.ofEpochSecond(epochSecond)));
-                        cooldown.setClaimedTime(now);
+                        cooldown.setClaimedTime(kit.getCreatedTime());
                         newCooldowns.add(cooldown);
                     });
             }
