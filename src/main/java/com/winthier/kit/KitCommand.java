@@ -220,10 +220,10 @@ public final class KitCommand extends AbstractCommand<KitPlugin> {
         seconds %= 60;
         minutes %= 60;
         hours %= 24;
-        if (minutes <= 60) {
+        if (days == 0 && hours == 0) {
             return String.format("%02d:%02d", minutes, seconds);
         }
-        if (hours <= 24) {
+        if (days == 0) {
             return String.format("%dh %02d:%02d", hours, minutes % 60, seconds);
         }
         return String.format("%dd %dh %02d:%02d", days, hours % 24, minutes % 60, seconds);
