@@ -6,11 +6,10 @@ import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.editor.EditMenuDelegate;
 import com.cavetale.core.editor.EditMenuNode;
 import com.cavetale.core.editor.Editor;
-import com.cavetale.core.font.VanillaItems;
+import com.cavetale.core.item.ItemKinds;
 import com.cavetale.core.util.Json;
 import com.cavetale.inventory.storage.InventoryStorage;
 import com.cavetale.memberlist.MemberList;
-import com.cavetale.mytems.Mytems;
 import com.winthier.kit.legacy.LegacyKit;
 import com.winthier.kit.legacy.LegacyKitItem;
 import com.winthier.kit.legacy.LegacyUsers;
@@ -57,7 +56,6 @@ import static net.kyori.adventure.text.JoinConfiguration.separator;
 import static net.kyori.adventure.text.event.HoverEvent.showText;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextDecoration.*;
-import static net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText;
 
 public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
@@ -232,16 +230,8 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
     private void itemsHelper(Inventory inventory, Map<String, Integer> counts, Map<String, Component> displayNames) {
         for (ItemStack item : inventory) {
             if (item == null || item.getType().isAir()) continue;
-            final String name;
-            final Component displayName;
-            Mytems mytems = Mytems.forItem(item);
-            if (mytems != null) {
-                displayName = join(noSeparators(), mytems.component, mytems.getMytem().getDisplayName());
-                name = plainText().serialize(mytems.getMytem().getDisplayName());
-            } else {
-                name = item.getI18NDisplayName();
-                displayName = join(noSeparators(), VanillaItems.componentOf(item.getType()), text(name));
-            }
+            final String name = ItemKinds.name(item);
+            final Component displayName = ItemKinds.chatDescription(item);
             counts.put(name, counts.getOrDefault(name, 0) + item.getAmount());
             displayNames.put(name, displayName.hoverEvent(item.asHoverEvent()));
             if (item.getItemMeta() instanceof BlockStateMeta meta
