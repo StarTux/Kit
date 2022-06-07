@@ -12,6 +12,8 @@ import com.cavetale.mytems.util.Text;
 import com.winthier.kit.sql.SQLMember;
 import com.winthier.playercache.PlayerCache;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,6 +32,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
+import static net.kyori.adventure.text.Component.space;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.JoinConfiguration.noSeparators;
 import static net.kyori.adventure.text.JoinConfiguration.separator;
@@ -104,11 +107,9 @@ public final class KitCommand extends AbstractCommand<KitPlugin> {
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(kit.displayName());
             if (kit.cooldown() != null) {
-                long secs = (kit.cooldown().getTime() - System.currentTimeMillis()) / 1000L;
-                if (secs > 0) {
-                    tooltip.add(join(noSeparators(),
-                                     text("Cooldown: ", RED),
-                                     text(formatSeconds(secs), GRAY)));
+                Duration time = Duration.between(Instant.now(), kit.cooldown().toInstant());
+                if (!time.isNegative()) {
+                    tooltip.add(join(noSeparators(), text("Unlocks in ", RED), formatSeconds(time).color(GRAY)));
                     result = true;
                 }
             } else {
@@ -213,19 +214,25 @@ public final class KitCommand extends AbstractCommand<KitPlugin> {
         return Math.abs(x - cx) + Math.abs(y - cy);
     }
 
-    private static String formatSeconds(long seconds) {
-        long minutes = seconds / 60;
-        long hours = minutes / 60;
-        long days = hours / 24;
-        seconds %= 60;
-        minutes %= 60;
-        hours %= 24;
-        if (days == 0 && hours == 0) {
-            return String.format("%02d:%02d", minutes, seconds);
+    private static Component formatSeconds(Duration time) {
+        final long seconds = time.toSeconds() % 60L;
+        final long minutes = time.toMinutes() % 60L;
+        final long hours = time.toHours() % 24L;
+        final long days = time.toDays() % 24;
+        List<Component> list = new ArrayList<>(11);
+        if (days > 0) {
+            list.add(text(days));
+            list.add(text("d", DARK_GRAY));
+            list.add(space());
         }
-        if (days == 0) {
-            return String.format("%dh %02d:%02d", hours, minutes % 60, seconds);
-        }
-        return String.format("%dd %dh %02d:%02d", days, hours % 24, minutes % 60, seconds);
+        list.add(text(hours));
+        list.add(text("h", DARK_GRAY));
+        list.add(space());
+        list.add(text(minutes));
+        list.add(text("m", DARK_GRAY));
+        list.add(space());
+        list.add(text(seconds));
+        list.add(text("s", DARK_GRAY));
+        return join(noSeparators(), list);
     }
 }
