@@ -330,7 +330,7 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
         case "items": {
             InventoryStorage storage = kit.parseInventoryStorage();
             Gui gui = new Gui(plugin)
-                .size(storage.isEmpty() ? storage.getSize() : 3 * 9)
+                .size(!storage.isEmpty() ? storage.getSize() : 3 * 9)
                 .title(kit.parseDisplayComponent());
             if (!storage.isEmpty()) storage.restore(gui.getInventory(), "kita.edit");
             gui.onClose(evt -> {
