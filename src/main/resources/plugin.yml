@@ -7,7 +7,7 @@ api-version: 1.19
 description: Give people kits
 author: StarTux
 
-depend: [Core, SQL, PlayerCache, Sidebar, Mytems, MemberList, Title, Inventory, Fam]
+depend: [Core, SQL, Mytems, MemberList, Title, Inventory, Fam]
 softdepend: []
 
 commands:
