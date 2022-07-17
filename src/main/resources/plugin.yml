@@ -2,7 +2,7 @@ main: com.winthier.kit.KitPlugin
 name: Kit
 
 version: 0.1
-api-version: 1.18
+api-version: 1.19
 
 description: Give people kits
 author: StarTux
