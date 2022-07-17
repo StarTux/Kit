@@ -25,8 +25,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -156,7 +158,14 @@ public final class KitCommand extends AbstractCommand<KitPlugin> {
                 for (ItemStack itemStack : gui.getInventory()) {
                     if (itemStack == null || itemStack.getType().isAir()) continue;
                     for (ItemStack drop : player.getInventory().addItem(itemStack).values()) {
-                        player.getWorld().dropItem(player.getEyeLocation(), drop).setPickupDelay(0);
+                        Item item = player.getWorld().dropItem(player.getEyeLocation(), drop);
+                        if (item != null) {
+                            item.setPickupDelay(0);
+                            item.setOwner(player.getUniqueId());
+                            item.setCanMobPickup(false);
+                            item.setInvulnerable(true);
+                            new PlayerDropItemEvent(player, item).callEvent();
+                        }
                     }
                 }
                 if (kit.tag().getCommands() != null && !kit.tag().getCommands().isEmpty()) {
