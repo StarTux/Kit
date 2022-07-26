@@ -152,19 +152,17 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
         if (kit.getInventory() != null) {
             Inventory inventory = kit.parseInventory();
             Map<String, Integer> counts = new HashMap<>();
-            Map<String, Component> displayNames = new HashMap<>();
-            itemsHelper(inventory, counts, displayNames);
+            Map<String, ItemStack> prototypes = new HashMap<>();
+            itemsHelper(inventory, counts, prototypes);
             List<String> allNames = new ArrayList<>(counts.keySet());
             allNames.sort(String.CASE_INSENSITIVE_ORDER);
-            List<Component> items = new ArrayList<>();
+            List<Component> components = new ArrayList<>();
             for (String name : allNames) {
                 int count = counts.get(name);
-                Component displayName = displayNames.get(name);
-                items.add(count != 1
-                          ? join(noSeparators(), text(count, YELLOW), text("\u00D7", GRAY), displayName)
-                          : displayName);
+                ItemStack item = prototypes.get(name);
+                components.add(ItemKinds.chatDescription(item, count));
             }
-            sender.sendMessage(info("items", items));
+            sender.sendMessage(info("items", components));
         }
         if (kit.getType() == KitType.MEMBER) {
             Map<String, Component> displayNames = new HashMap<>();
@@ -227,17 +225,16 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
         return info(key + "(" + list.size() + ")", join(separator(space()), list));
     }
 
-    private void itemsHelper(Inventory inventory, Map<String, Integer> counts, Map<String, Component> displayNames) {
+    private void itemsHelper(Inventory inventory, Map<String, Integer> counts, Map<String, ItemStack> prototypes) {
         for (ItemStack item : inventory) {
             if (item == null || item.getType().isAir()) continue;
             final String name = ItemKinds.name(item);
-            final Component displayName = ItemKinds.chatDescription(item);
             counts.put(name, counts.getOrDefault(name, 0) + item.getAmount());
-            displayNames.put(name, displayName.hoverEvent(item.asHoverEvent()));
+            prototypes.put(name, item);
             if (item.getItemMeta() instanceof BlockStateMeta meta
                 && meta.hasBlockState()
                 && meta.getBlockState() instanceof Container container) {
-                itemsHelper(container.getInventory(), counts, displayNames);
+                itemsHelper(container.getInventory(), counts, prototypes);
             }
         }
     }
