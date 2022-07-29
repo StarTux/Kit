@@ -28,10 +28,10 @@ import org.bukkit.SoundCategory;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import static com.cavetale.core.event.item.PlayerReceiveItemsEvent.receiveInventory;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
 import static net.kyori.adventure.text.Component.space;
@@ -155,19 +155,7 @@ public final class KitCommand extends AbstractCommand<KitPlugin> {
             gui.getInventory().setItem(i, kit.inventory().getItem(i));
         }
         gui.onClose(evt -> {
-                for (ItemStack itemStack : gui.getInventory()) {
-                    if (itemStack == null || itemStack.getType().isAir()) continue;
-                    for (ItemStack drop : player.getInventory().addItem(itemStack).values()) {
-                        Item item = player.getWorld().dropItem(player.getEyeLocation(), drop);
-                        if (item != null) {
-                            item.setPickupDelay(0);
-                            item.setOwner(player.getUniqueId());
-                            item.setCanMobPickup(false);
-                            item.setInvulnerable(true);
-                            new PlayerDropItemEvent(player, item).callEvent();
-                        }
-                    }
-                }
+                receiveInventory(player, gui.getInventory());
                 if (kit.tag().getCommands() != null && !kit.tag().getCommands().isEmpty()) {
                     for (String command : kit.tag().getCommands()) {
                         String cmd = command
