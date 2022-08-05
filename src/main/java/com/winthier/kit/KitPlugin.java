@@ -175,21 +175,18 @@ public final class KitPlugin extends JavaPlugin {
             .findList();
         Bukkit.getScheduler().runTask(this, () -> {
                 sidebarList.clear();
-                PLAYERS: for (Player player : Bukkit.getOnlinePlayers()) {
-                    final UUID uuid = player.getUniqueId();
+                PLAYERS: for (UUID uuid : uuids) {
                     if (unclaimedMembers.contains(uuid)) {
                         sidebarList.add(uuid);
                         continue;
                     }
                     for (SQLKit kit : permissionKits) {
-                        if (kit.getPermission() != null
-                            && player.hasPermission(kit.getPermission())
-                            && player.isPermissionSet(kit.getPermission())) {
-                            Set<UUID> set = lockedKitMap.get(kit.getId());
-                            if (set == null || !set.contains(uuid)) {
-                                sidebarList.add(uuid);
-                                continue PLAYERS;
-                            }
+                        if (kit.getPermission() == null) continue;
+                        if (!Perm.get().has(uuid, kit.getPermission())) continue;
+                        Set<UUID> set = lockedKitMap.get(kit.getId());
+                        if (set == null || !set.contains(uuid)) {
+                            sidebarList.add(uuid);
+                            continue PLAYERS;
                         }
                     }
                 }
