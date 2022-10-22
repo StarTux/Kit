@@ -26,6 +26,8 @@ public final class Kit {
     }
 
     public ItemStack findFirstItem() {
+        ItemStack center = inventory().getItem(13);
+        if (center != null && !center.getType().isAir()) return center;
         for (ItemStack itemStack : inventory()) {
             if (itemStack != null && !itemStack.getType().isAir()) {
                 return itemStack;
