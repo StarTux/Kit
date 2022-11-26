@@ -414,6 +414,9 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
         if (kit.getType() != KitType.MEMBER) {
             throw new CommandWarn("Not a member kit!");
         }
+        if (kit.isEnabled()) {
+            throw new CommandWarn("Kit already enabled!");
+        }
         List<SQLMember> newRows = new ArrayList<>();
         for (Map.Entry<UUID, String> entry : MemberList.get(listName).entrySet()) {
             newRows.add(new SQLMember(kit, entry.getKey()));
