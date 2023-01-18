@@ -5,7 +5,7 @@ import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.connect.ServerCategory;
 import com.cavetale.core.event.player.PluginPlayerEvent.Detail;
 import com.cavetale.core.event.player.PluginPlayerEvent;
-import com.cavetale.core.font.DefaultFont;
+import com.cavetale.core.font.GuiOverlay;
 import com.cavetale.core.playercache.PlayerCache;
 import com.cavetale.fam.Fam;
 import com.cavetale.mytems.util.Items;
@@ -70,7 +70,10 @@ public final class KitCommand extends AbstractCommand<KitPlugin> {
         int rows = Math.max(3, Math.min(6, (kits.size() - 1) / 9 + 1));
         Gui gui = new Gui(plugin);
         gui.size(rows * 9);
-        gui.title(DefaultFont.guiBlankOverlay(rows * 9, GREEN, text("Kits")));
+        gui.title(GuiOverlay.BLANK.builder(rows * 9, GREEN)
+                  .layer(GuiOverlay.TITLE_BAR, DARK_GREEN)
+                  .title(text("Kits", GREEN))
+                  .build());
         List<Integer> slots = new ArrayList<>(rows * 9);
         for (int i = 0; i < rows * 9; i += 1) slots.add(i);
         Collections.sort(slots, (a, b) -> Integer.compare(slotDist(a, 4, rows / 2), slotDist(b, 4, rows / 2)));
@@ -146,10 +149,13 @@ public final class KitCommand extends AbstractCommand<KitPlugin> {
 
     private void openKit(Player player, Kit kit) {
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 1.0f, 1.0f);
-        int size = kit.inventory().getSize();
+        final int size = kit.inventory().getSize();
         Gui gui = new Gui(plugin)
             .size(size)
-            .title(kit.displayName());
+            .title(GuiOverlay.HOLES.builder(size, WHITE)
+                   .layer(GuiOverlay.TITLE_BAR, DARK_GREEN)
+                   .title(kit.displayName())
+                   .build());
         for (int i = 0; i < size; i += 1) {
             gui.getInventory().setItem(i, kit.inventory().getItem(i));
         }
