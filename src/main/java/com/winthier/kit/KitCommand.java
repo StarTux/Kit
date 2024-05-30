@@ -8,7 +8,6 @@ import com.cavetale.core.event.player.PluginPlayerEvent;
 import com.cavetale.core.font.GuiOverlay;
 import com.cavetale.core.playercache.PlayerCache;
 import com.cavetale.fam.Fam;
-import com.cavetale.mytems.util.Items;
 import com.cavetale.mytems.util.Text;
 import com.winthier.kit.sql.SQLMember;
 import java.text.SimpleDateFormat;
@@ -31,6 +30,7 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import static com.cavetale.core.event.item.PlayerReceiveItemsEvent.receiveInventory;
+import static com.cavetale.mytems.util.Items.tooltip;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
 import static net.kyori.adventure.text.Component.space;
@@ -127,7 +127,7 @@ public final class KitCommand extends AbstractCommand<KitPlugin> {
                 tooltip.addAll(Text.wrapLore(kit.row().getDescription(), c -> c.color(WHITE)));
             }
             icon.editMeta(meta -> {
-                    Items.text(meta, tooltip);
+                    tooltip(meta, tooltip);
                     meta.addItemFlags(ItemFlag.values());
                 });
             gui.setItem(slot, icon, click -> {
