@@ -22,6 +22,7 @@ import com.winthier.title.Title;
 import com.winthier.title.TitlePlugin;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -99,6 +100,10 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
             .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames),
                         CommandArgCompleter.NULL)
             .senderCaller(this::fromFile);
+        rootNode.addChild("tofile").arguments("<kit>")
+            .description("Save kit members to a file")
+            .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames))
+            .senderCaller(this::toFile);
         rootNode.addChild("delete").arguments("<kit>")
             .description("Delete a kit")
             .completers(CommandArgCompleter.supplyIgnoreCaseList(this::getKitNames))
@@ -403,6 +408,32 @@ public final class KitAdminCommand extends AbstractCommand<KitPlugin> {
         final int added = plugin.database.insertIgnore(newRows);
         final int skipped = newRows.size() - added;
         sender.sendMessage(text("Added " + added + ", skipped " + skipped + " members from file " + path, AQUA));
+        return true;
+    }
+
+    private boolean toFile(CommandSender sender, String[] args) {
+        if (args.length != 1) return false;
+        final SQLKit kit = requireKit(args[0]);
+        if (kit.getType() != KitType.MEMBER) {
+            throw new CommandWarn("Not a member kit: " + kit.getName());
+        }
+        plugin.getDataFolder().mkdirs();
+        final File file = new File(plugin.getDataFolder(), kit.getName() + ".txt");
+        final List<SQLMember> members = plugin.database.find(SQLMember.class).eq("kitId", kit.getId()).findList();
+        if (members.isEmpty()) {
+            throw new CommandWarn("No members: " + kit.getName());
+        }
+        try (PrintStream printStream = new PrintStream(file)) {
+            for (SQLMember row : members) {
+                final UUID uuid = row.getMember();
+                final String name = PlayerCache.nameForUuid(uuid);
+                printStream.println("" + uuid);
+            }
+        } catch (IOException ioe) {
+            plugin.getLogger().log(Level.SEVERE, "" + file, ioe);
+            throw new CommandWarn("Error, see console: " + ioe.getMessage());
+        }
+        sender.sendMessage(text("Wrote " + members.size() + " members to " + file + ": " + kit.getName(), YELLOW));
         return true;
     }
 
