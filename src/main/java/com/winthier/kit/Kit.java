@@ -1,7 +1,10 @@
 package com.winthier.kit;
 
 import com.winthier.kit.sql.SQLKit;
+import com.winthier.kit.sql.SQLMember;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
@@ -19,6 +22,7 @@ public final class Kit {
     private Inventory inventory;
     private Component displayName;
     private SQLKit.Tag tag;
+    private final List<SQLMember> members = new ArrayList<>();
 
     public boolean hasCooldown() {
         return row.getType() == KitType.PERMISSION_COOLDOWN
@@ -44,6 +48,10 @@ public final class Kit {
 
     public Date cooldown() {
         return cooldown;
+    }
+
+    public List<SQLMember> members() {
+        return members;
     }
 
     public Inventory inventory() {

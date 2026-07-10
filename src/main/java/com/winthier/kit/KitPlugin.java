@@ -18,16 +18,24 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Consumer;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+@Getter
 public final class KitPlugin extends JavaPlugin {
+    @Getter private static KitPlugin instance;
     protected final SQLDatabase database = new SQLDatabase(this);
     protected final EventListener eventListener = new EventListener(this);
     protected final KitCommand kitCommand = new KitCommand(this);
     protected final Set<UUID> sidebarList = new HashSet<>();
     protected final KitAdminCommand kitAdminCommand = new KitAdminCommand(this);
+
+    @Override
+    public void onLoad() {
+        instance = this;
+    }
 
     @Override
     public void onEnable() {
