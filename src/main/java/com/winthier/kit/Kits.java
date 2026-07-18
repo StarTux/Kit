@@ -18,7 +18,7 @@ public final class Kits {
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy_MM_dd");
 
     public static Kit createKit(String baseKitName, Iterable<UUID> uuids) {
-        final String templateKitName = baseKitName + "_template";
+        final String templateKitName = "template_" + baseKitName;
         final SQLKit kit = KitPlugin.getInstance().getDatabase().find(SQLKit.class).eq("name", templateKitName).findUnique();
         if (kit == null) {
             throw new IllegalStateException("Could not find template kit: " + templateKitName);
