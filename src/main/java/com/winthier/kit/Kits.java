@@ -27,7 +27,7 @@ public final class Kits {
         final String newKitName = baseKitName + "_" + DATE_FORMAT.format(now);
         kit.setId(null);
         kit.setName(newKitName);
-        kit.setEnabled(false);
+        kit.setEnabled(true);
         kit.setCreatedTime(now);
         if (KitPlugin.getInstance().getDatabase().insert(kit) == 0) {
             throw new IllegalStateException("Could not clone kit: " + templateKitName + " => " + newKitName);
